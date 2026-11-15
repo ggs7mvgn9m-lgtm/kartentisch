@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kartentisch">
+<title>Kartentisch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<style>
+/* Kartentisch: königsblaue Tinte auf kühlem Papier.
+   Layout: Seitenleiste | Arbeitsfläche (Board, Bibliothek, Präsentation) | Kartenpanel rechts */
+:root{
+  --bg:#e8ecf3; --surface:#ffffff; --surface-2:#f3f5f9; --board:#f8f9fc; --grid:#cad2e0;
+  --text:#18202e; --muted:#5a667b; --line:#d5dbe6; --accent:#2445c4; --accent-ink:#ffffff; --accent-weak:#e1e7fb; --danger:#bf342b;
+  --shadow:0 1px 2px rgba(20,30,60,.07),0 8px 22px rgba(20,30,60,.08);
+  --shadow-lift:0 2px 4px rgba(20,30,60,.1),0 16px 36px rgba(20,30,60,.16);
+  --font-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --font-body:"Atkinson Hyperlegible",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --ink-k:#18202e; --ink-b:#2445c4; --ink-r:#d1342b; --ink-g:#18864b; --ink-o:#de7410; --ink-v:#7a3fc4;
+  --hl-y:#ffd60a; --hl-g:#6be38a; --hl-p:#ff86cf; --hl-b:#6cc8ff; --hl-opacity:.42; --hl-blend:multiply;
+  --card-none:#ffffff; --card-yellow:#fff4c4; --card-green:#ddf2e2; --card-blue:#dde7fc; --card-rose:#fbdfdf; --card-violet:#ebe2fa;
+  --stripe-none:#c3cbd9; --stripe-yellow:#e6b800; --stripe-green:#2f9d5c; --stripe-blue:#2445c4; --stripe-rose:#d8505a; --stripe-violet:#7a3fc4;
+  --ok:#1f8a4c; --warn:#b7791f;
+  --sbw:264px; --edw:480px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1117; --surface:#181d26; --surface-2:#1f252f; --board:#13171e; --grid:#2a3140;
+    --text:#e6eaf2; --muted:#9aa5b9; --line:#2c3442; --accent:#859dff; --accent-ink:#0e1117; --accent-weak:#232c49; --danger:#ff7b70;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35); --shadow-lift:0 2px 4px rgba(0,0,0,.45),0 16px 36px rgba(0,0,0,.5);
+    --ink-k:#e6eaf2; --ink-b:#8ea4ff; --ink-r:#ff6d62; --ink-g:#52d18c; --ink-o:#ffa24a; --ink-v:#bb90ff;
+    --hl-opacity:.32; --hl-blend:normal;
+    --card-none:#181d26; --card-yellow:#36301a; --card-green:#1a2f23; --card-blue:#1b263f; --card-rose:#382126; --card-violet:#2a223f;
+    --stripe-none:#3a4352; --stripe-yellow:#e6c33a; --stripe-green:#4cc184; --stripe-blue:#859dff; --stripe-rose:#ff7b86; --stripe-violet:#bb90ff;
+    --ok:#52d18c; --warn:#f0b54a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1117; --surface:#181d26; --surface-2:#1f252f; --board:#13171e; --grid:#2a3140;
+  --text:#e6eaf2; --muted:#9aa5b9; --line:#2c3442; --accent:#859dff; --accent-ink:#0e1117; --accent-weak:#232c49; --danger:#ff7b70;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35); --shadow-lift:0 2px 4px rgba(0,0,0,.45),0 16px 36px rgba(0,0,0,.5);
+  --ink-k:#e6eaf2; --ink-b:#8ea4ff; --ink-r:#ff6d62; --ink-g:#52d18c; --ink-o:#ffa24a; --ink-v:#bb90ff;
+  --hl-opacity:.32; --hl-blend:normal;
+  --card-none:#181d26; --card-yellow:#36301a; --card-green:#1a2f23; --card-blue:#1b263f; --card-rose:#382126; --card-violet:#2a223f;
+  --stripe-none:#3a4352; --stripe-yellow:#e6c33a; --stripe-green:#4cc184; --stripe-blue:#859dff; --stripe-rose:#ff7b86; --stripe-violet:#bb90ff;
+  --ok:#52d18c; --warn:#f0b54a;
+  color-scheme:dark;
+}
+/* Präsentation: standardmäßig hell, weil Beamer dunkle Flächen schlucken */
+.present.light{
+  --bg:#e8ecf3; --surface:#ffffff; --text:#18202e; --muted:#5a667b; --line:#d5dbe6; --accent:#2445c4;
+  --ink-k:#18202e; --ink-b:#2445c4; --ink-r:#d1342b; --ink-g:#18864b; --ink-o:#de7410; --ink-v:#7a3fc4; --hl-opacity:.42; --hl-blend:multiply;
+  --card-none:#ffffff; --card-yellow:#fff4c4; --card-green:#ddf2e2; --card-blue:#dde7fc; --card-rose:#fbdfdf; --card-violet:#ebe2fa;
+  --stripe-none:#c3cbd9; --stripe-yellow:#e6b800; --stripe-green:#2f9d5c; --stripe-blue:#2445c4; --stripe-rose:#d8505a; --stripe-violet:#7a3fc4;
+  color-scheme:light;
+}
+.present.dark{
+  --bg:#0e1117; --surface:#181d26; --text:#e6eaf2; --muted:#9aa5b9; --line:#2c3442; --accent:#859dff;
+  --ink-k:#e6eaf2; --ink-b:#8ea4ff; --ink-r:#ff6d62; --ink-g:#52d18c; --ink-o:#ffa24a; --ink-v:#bb90ff; --hl-opacity:.32; --hl-blend:normal;
+  --card-none:#181d26; --card-yellow:#36301a; --card-green:#1a2f23; --card-blue:#1b263f; --card-rose:#382126; --card-violet:#2a223f;
+  --stripe-none:#3a4352; --stripe-yellow:#e6c33a; --stripe-green:#4cc184; --stripe-blue:#859dff; --stripe-rose:#ff7b86; --stripe-violet:#bb90ff;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ic{display:block;flex:none}
+
+.app{height:100%;display:grid;grid-template-columns:var(--sbw) minmax(0,1fr) auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+
+/* ---------- Seitenleiste ---------- */
+.sidebar{display:flex;flex-direction:column;min-height:0;background:var(--surface-2);border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-.01em}
+.brand .logo{width:28px;height:28px;flex:none}
+.brand .grow{flex:1}
+.sb-scroll{flex:1;overflow-y:auto;padding:4px 10px 12px;display:flex;flex-direction:column;gap:2px;-webkit-overflow-scrolling:touch}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;text-align:left;min-height:38px}
+.nav-item:hover{background:var(--accent-weak)}
+.nav-item.active{background:var(--accent-weak);color:var(--accent);font-weight:700}
+.nav-item .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-item .count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.nav-head{display:flex;align-items:center;justify-content:space-between;padding:16px 10px 4px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mini-btn{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--surface)}
+.mini-btn:hover{border-color:var(--accent);color:var(--accent)}
+.empty-note{padding:6px 10px;color:var(--muted);font-size:13px}
+.sb-foot{border-top:1px solid var(--line);padding:12px 14px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;cursor:pointer}
+.switch{position:relative;width:40px;height:24px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:12px;background:var(--line);transition:background .15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked + span{background:var(--accent)}
+.switch input:checked + span::after{transform:translateX(16px)}
+.switch input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.foot-row{display:flex;gap:8px}
+.foot-row .btn{flex:1}
+.sync{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.sync .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.sync.ok .dot{background:var(--ok)}
+.sync.busy .dot{background:var(--accent);animation:pulse 1s infinite}
+.sync.warn .dot{background:var(--warn)}
+@keyframes pulse{50%{opacity:.3}}
+.scrim{display:none}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08);color:var(--accent-ink)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{border-color:var(--danger)}
+.icon-btn{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid transparent;background:transparent;flex:none}
+.icon-btn:hover{background:var(--accent-weak);color:var(--accent)}
+.icon-btn.active{background:var(--accent);color:var(--accent-ink)}
+.icon-btn:disabled{opacity:.35;pointer-events:none}
+
+/* ---------- Hauptbereich ---------- */
+.main{min-width:0;min-height:0;display:flex;flex-direction:column;position:relative}
+.view-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface);min-height:56px}
+.view-head .grow{flex:1;min-width:0}
+.title-input{width:100%;border:1px solid transparent;border-radius:8px;background:transparent;padding:4px 8px;font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-.01em;min-width:0;text-overflow:ellipsis}
+.title-input:hover{border-color:var(--line)}
+.title-input:focus{border-color:var(--accent);outline:none;background:var(--surface)}
+.only-narrow{display:none}
+.loading{display:grid;place-items:center;flex:1;color:var(--muted)}
+
+/* ---------- Board ---------- */
+.vp-wrap{position:relative;flex:1;min-height:0;overflow:hidden}
+.viewport{position:absolute;inset:0;overflow:hidden;background-color:var(--board);background-image:radial-gradient(circle,var(--grid) 1.1px,transparent 1.3px);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;outline:none}
+.viewport.tool-pen,.viewport.tool-hl{cursor:crosshair}
+.viewport.tool-eraser{cursor:cell}
+.viewport.panning{cursor:grabbing}
+.world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.layer-svg{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+.arrow-line{fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.arrow-hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.arrow.sel .arrow-line{stroke:var(--accent);stroke-width:3}
+.hl{fill:none;opacity:var(--hl-opacity);mix-blend-mode:var(--hl-blend);stroke-linecap:round;stroke-linejoin:round}
+
+.bcard{position:absolute;left:0;top:0;border-radius:12px;background:var(--card-none);box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;cursor:default}
+.bcard::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--stripe-none)}
+.bcard.sel{outline:2.5px solid var(--accent);outline-offset:2px}
+.bcard.dragging{box-shadow:var(--shadow-lift)}
+.bcard.connect-src{outline:2.5px dashed var(--accent);outline-offset:3px}
+.bcard .cc{padding:16px 16px 14px;pointer-events:none}
+.bcard.auto{max-height:540px}
+.bcard.clip .fade{position:absolute;left:0;right:0;bottom:0;height:48px;background:linear-gradient(transparent,var(--cardbg,var(--card-none)));pointer-events:none}
+.bcard-resize{position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;touch-action:none}
+.bcard-resize::after{content:"";position:absolute;right:5px;bottom:5px;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);opacity:.55}
+.c-yellow{--cardbg:var(--card-yellow);background:var(--card-yellow)} .c-yellow::before{background:var(--stripe-yellow) !important}
+.c-green{--cardbg:var(--card-green);background:var(--card-green)} .c-green::before{background:var(--stripe-green) !important}
+.c-blue{--cardbg:var(--card-blue);background:var(--card-blue)} .c-blue::before{background:var(--stripe-blue) !important}
+.c-rose{--cardbg:var(--card-rose);background:var(--card-rose)} .c-rose::before{background:var(--stripe-rose) !important}
+.c-violet{--cardbg:var(--card-violet);background:var(--card-violet)} .c-violet::before{background:var(--stripe-violet) !important}
+
+/* Karteninhalt (Board, Bibliothek, Präsentation) */
+.cc-title{font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.2;letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance;overflow-wrap:anywhere}
+.cc-title.empty{color:var(--muted);font-weight:500}
+.cc-text{overflow-wrap:anywhere}
+.cc-text > :first-child,.ed-text > :first-child{margin-top:0}
+.cc-text > :last-child,.ed-text > :last-child{margin-bottom:0}
+.cc-text h1,.cc-text h2,.cc-text h3,.ed-text h1,.ed-text h2,.ed-text h3{font-family:var(--font-display);font-size:1.15em;margin:.6em 0 .25em;line-height:1.2}
+.cc-text p,.ed-text p{margin:.35em 0}
+.cc-text ul,.cc-text ol,.ed-text ul,.ed-text ol{margin:.35em 0;padding-left:1.3em}
+.cc > * + *{margin-top:10px}
+.cc-ink{display:block;width:100%;height:auto;overflow:visible}
+.cc-img{display:block;max-width:100%;border-radius:8px}
+
+.toolbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-width:calc(100% - 24px);overflow-x:auto;scrollbar-width:none;z-index:5}
+.toolbar::-webkit-scrollbar{display:none}
+.tb-sep{width:1px;align-self:stretch;margin:4px 4px;background:var(--line);flex:none}
+.swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;display:grid;place-items:center;background:transparent;flex:none;padding:0}
+.swatch i{display:block;width:18px;height:18px;border-radius:50%}
+.swatch.active{border-color:var(--text)}
+.size{width:30px;height:30px;border-radius:8px;border:0;background:transparent;display:grid;place-items:center;flex:none;padding:0}
+.size i{display:block;border-radius:50%;background:var(--text)}
+.size.active{background:var(--accent-weak)}
+.zoombar{position:absolute;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:5}
+.zoombar .pct{min-width:52px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;border:0;background:transparent;padding:6px 2px;border-radius:7px}
+.selbar{position:absolute;display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lift);z-index:6;max-width:calc(100% - 16px);overflow-x:auto;scrollbar-width:none}
+.selbar .btn{min-height:32px;padding:4px 10px;border-color:transparent;font-size:13px}
+.selbar .swatch{width:26px;height:26px}
+.selbar .swatch i{width:16px;height:16px;border:1px solid var(--line)}
+.board-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:var(--muted);pointer-events:none;max-width:340px;padding:0 16px}
+.board-hint b{display:block;font-family:var(--font-display);font-size:18px;color:var(--text);margin-bottom:4px}
+
+/* ---------- Bibliothek ---------- */
+.lib-tools{display:flex;gap:8px;align-items:center}
+.search{min-width:0;width:240px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);padding:7px 12px}
+.search:focus{outline:none;border-color:var(--accent)}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px calc(24px + env(safe-area-inset-bottom))}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.lcard{position:relative;display:flex;flex-direction:column;height:250px;border-radius:12px;border:1px solid var(--line);background:var(--card-none);box-shadow:var(--shadow);overflow:hidden;text-align:left;padding:0;cursor:pointer}
+.lcard::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--stripe-none)}
+.lcard:hover{box-shadow:var(--shadow-lift)}
+.lcard .cc{flex:1;min-height:0;overflow:hidden;padding:16px 14px 0;font-size:13.5px;position:relative}
+.lcard .cc-title{font-size:16px}
+.lcard .cc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(transparent,var(--cardbg,var(--card-none)))}
+.lmeta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px 10px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.chip.lone{color:var(--warn);border-color:currentColor;background:transparent}
+.lib-empty{color:var(--muted);text-align:center;padding:60px 20px}
+
+/* ---------- Präsentations-Editor ---------- */
+.pres-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr)}
+.slides-col{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--surface)}
+.slides-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px;font-size:13px;color:var(--muted)}
+.slides{list-style:none;margin:0;padding:0 8px 8px;overflow-y:auto;flex:1;touch-action:pan-y}
+.slide-row{display:flex;align-items:center;gap:6px;padding:6px;border-radius:10px;border:1px solid transparent;background:var(--surface);cursor:pointer;min-height:48px}
+.slide-row:hover{background:var(--surface-2)}
+.slide-row.active{border-color:var(--accent);background:var(--accent-weak)}
+.slide-row.dragging{box-shadow:var(--shadow-lift);position:relative;z-index:2;background:var(--surface)}
+.slide-row .grip{display:grid;place-items:center;width:28px;height:36px;color:var(--muted);cursor:grab;touch-action:none;flex:none}
+.slide-row .num{width:24px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;flex:none}
+.slide-row .sw{width:10px;height:28px;border-radius:3px;background:var(--stripe-none);flex:none}
+.slide-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.slide-row .icon-btn{width:30px;height:30px}
+.slides-foot{padding:10px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.preview-col{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:12px;background:var(--bg)}
+.preview-frame{position:relative;width:100%;max-width:900px;aspect-ratio:16/10;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.preview-note{color:var(--muted);font-size:13px;text-align:center}
+
+/* ---------- Präsentationsmodus ---------- */
+.present{position:fixed;inset:0;z-index:50;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-user-select:none;user-select:none;touch-action:none}
+.stage{position:absolute;inset:0;overflow:hidden}
+.stage.scrolly{overflow-y:auto;touch-action:pan-y}
+.slide-holder{position:relative;margin:0 auto}
+.slide{position:absolute;left:0;top:0;width:960px;transform-origin:0 0;border-radius:18px;background:var(--card-none);box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden}
+.slide::before{content:"";position:absolute;left:0;top:0;right:0;height:8px;background:var(--stripe-none)}
+.slide .cc{padding:48px 56px 52px;font-size:26px;line-height:1.45}
+.slide .cc-title{font-size:46px;margin-bottom:22px}
+.slide .cc > * + *{margin-top:22px}
+.slide .cc-img{border-radius:12px;margin-left:auto;margin-right:auto}
+.p-ui{position:absolute;display:flex;align-items:center;gap:6px;transition:opacity .25s;z-index:2}
+.present.idle .p-ui{opacity:0;pointer-events:none}
+.p-top{top:calc(12px + env(safe-area-inset-top));right:calc(12px + env(safe-area-inset-right))}
+.p-bottom{bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:var(--shadow)}
+.p-count{min-width:70px;text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
+.p-top .icon-btn{background:var(--surface);border:1px solid var(--line)}
+.p-progress{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);transition:width .2s;z-index:2}
+.p-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:20px}
+
+/* ---------- Karten-Editor ---------- */
+.editor{width:var(--edw);border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0}
+.ed-head{display:flex;align-items:center;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line);min-height:56px}
+.ed-head .grow{flex:1}
+.ed-colors{display:flex;gap:2px}
+.ed-colors .swatch{width:28px;height:28px}
+.ed-colors .swatch i{width:16px;height:16px;border:1px solid var(--line)}
+.ed-tools{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.ed-tools::-webkit-scrollbar{display:none}
+.ed-tools .icon-btn{width:34px;height:34px}
+.fmt{font-weight:700;font-size:15px;width:34px;height:34px;border-radius:8px;border:0;background:transparent;display:grid;place-items:center;flex:none}
+.fmt:hover{background:var(--accent-weak);color:var(--accent)}
+.ed-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px calc(28px + env(safe-area-inset-bottom))}
+.ed-title{width:100%;border:0;background:transparent;font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.015em;padding:4px 0 10px;outline:none}
+.ed-title::placeholder{color:var(--muted);opacity:.7}
+.ed-blocks{display:flex;flex-direction:column;gap:10px}
+.blk{position:relative;border-radius:10px}
+.blk-ctrl{position:absolute;top:-14px;right:4px;display:flex;gap:2px;padding:2px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .12s;z-index:2}
+.blk:hover .blk-ctrl,.blk:focus-within .blk-ctrl,.blk.active .blk-ctrl{opacity:1;pointer-events:auto}
+.blk-ctrl .icon-btn{width:28px;height:28px}
+.ed-text{min-height:1.6em;padding:6px 8px;border-radius:8px;outline:none;font-size:16px;line-height:1.5;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere}
+.ed-text:focus{background:var(--surface-2)}
+.ed-text:empty::before{content:attr(data-ph);color:var(--muted);opacity:.75}
+.blk-ink{position:relative;border:1px solid var(--line);border-radius:10px;background-color:var(--board);background-image:linear-gradient(var(--grid) 1px,transparent 1px);background-size:100% 32px;background-position:0 31px;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overflow:hidden;cursor:crosshair}
+body.finger-draw .blk-ink{touch-action:none}
+.blk-ink svg{display:block;width:100%;height:auto}
+.ink-grow{display:flex;justify-content:center;align-items:center;height:22px;border-top:1px dashed var(--line);color:var(--muted);font-size:12px;cursor:ns-resize;touch-action:none;background:var(--surface)}
+.blk-img img{display:block;max-width:100%;border-radius:8px}
+.ed-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.ed-meta{margin-top:22px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.ed-meta .links{display:flex;flex-wrap:wrap;gap:6px}
+.ed-meta .chip{cursor:pointer}
+.ed-meta .chip:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- Modale, Menüs, Hinweise ---------- */
+.backdrop{position:fixed;inset:0;z-index:80;background:rgba(10,14,24,.42);display:grid;place-items:center;padding:16px}
+.modal{width:min(520px,100%);max-height:min(640px,calc(100% - 32px));display:flex;flex-direction:column;background:var(--surface);border-radius:14px;box-shadow:var(--shadow-lift);border:1px solid var(--line);overflow:hidden}
+.modal h2{font-family:var(--font-display);font-size:19px;margin:0;padding:16px 18px 10px;text-wrap:balance}
+.modal p{margin:0;padding:0 18px 8px;color:var(--muted)}
+.modal .m-body{flex:1;min-height:0;overflow-y:auto;padding:4px 10px}
+.modal .m-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+.modal .search{width:auto;margin:0 18px 8px}
+.pick-row{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:9px;background:transparent;text-align:left;min-height:44px}
+.pick-row:hover{background:var(--surface-2)}
+.pick-row.on{background:var(--accent-weak)}
+.pick-row .sw{width:8px;height:30px;border-radius:3px;background:var(--stripe-none);flex:none}
+.pick-row .tt{flex:1;min-width:0}
+.pick-row .tt b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-row .tt small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-row .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.pick-row.on .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.menu{position:fixed;z-index:90;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lift);padding:4px}
+.menu button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;padding:9px 12px;border-radius:8px;text-align:left;min-height:40px}
+.menu button:hover{background:var(--surface-2)}
+.menu button.danger{color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- Schmale Bildschirme ---------- */
+@media (max-width: 1099px){
+  .editor{position:fixed;inset:0;z-index:40;width:auto;border-left:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+  .app{grid-template-columns:var(--sbw) minmax(0,1fr)}
+}
+@media (max-width: 859px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:min(300px,86vw);z-index:30;transform:translateX(-105%);transition:transform .2s;box-shadow:var(--shadow-lift);padding-top:env(safe-area-inset-top)}
+  .sidebar.open{transform:none}
+  .scrim{display:block;position:fixed;inset:0;z-index:29;background:rgba(10,14,24,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .only-narrow{display:grid}
+  .view-head{padding:8px 10px}
+  .title-input{font-size:18px}
+  .hide-narrow{display:none}
+  .pres-body{grid-template-columns:minmax(0,1fr)}
+  .preview-col{display:none}
+  .slides-col{border-right:0}
+  .search{width:100%}
+  .lib-tools{flex:1}
+  .scroll-area{padding:14px}
+  .lib-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .lcard{height:210px}
+  .toolbar{top:8px}
+  .slide .cc{padding:40px 40px 44px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <aside id="sidebar" class="sidebar" aria-label="Navigation">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="7" width="15" height="17" rx="3" fill="var(--accent-weak)" stroke="var(--accent)" stroke-width="1.6"/><rect x="11" y="3" width="15" height="17" rx="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.6"/><path d="M14.5 13.5c2-2.6 3.3 1.3 5.2-.8 1-1.1 1.6-1.9 2.6-1.4" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="grow">Kartentisch</span>
+      <button id="sbClose" class="icon-btn only-narrow" aria-label="Seitenleiste schließen"></button>
+    </div>
+    <div class="sb-scroll">
+      <button id="navLibrary" class="nav-item" type="button"><span id="libIcon"></span><span class="lbl">Kartenbibliothek</span><span id="cardCount" class="count"></span></button>
+      <div class="nav-head"><span>Boards</span><button id="newBoard" class="mini-btn" type="button" aria-label="Neues Board" title="Neues Board"></button></div>
+      <div id="boardList"></div>
+      <div class="nav-head"><span>Präsentationen</span><button id="newPres" class="mini-btn" type="button" aria-label="Neue Präsentation" title="Neue Präsentation"></button></div>
+      <div id="presList"></div>
+    </div>
+    <div class="sb-foot">
+      <label class="toggle" for="fingerDraw"><span>Mit Finger zeichnen</span><span class="switch"><input type="checkbox" id="fingerDraw"><span></span></span></label>
+      <div class="foot-row">
+        <button id="exportBtn" class="btn" type="button">Exportieren</button>
+        <button id="importBtn" class="btn" type="button">Importieren</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div id="sync" class="sync" role="status"><span class="dot"></span><span id="syncText">Verbinde …</span></div>
+    </div>
+  </aside>
+  <div id="scrim" class="scrim"></div>
+  <main id="main" class="main"><div class="loading">Lade deine Karten …</div></main>
+  <section id="editor" class="editor" hidden aria-label="Karte bearbeiten"></section>
+</div>
+<div id="present" class="present light" hidden></div>
+<div id="modalRoot"></div>
+<input type="file" id="imageFile" accept="image/*" hidden>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Kartentisch – Karten, Boards, Handschrift, Präsentationen
+   ===================================================================== */
+
+// ---------- Hilfsfunktionen ----------
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style') el.style.cssText = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs) { const el = document.createElementNS(SVGNS, tag); if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]); return el; }
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+let lastStamp = 0;
+const stamp = () => (lastStamp = Math.max(Date.now(), lastStamp + 1));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function debounce(fn, ms) { let t; const d = (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; d.cancel = () => clearTimeout(t); return d; }
+const r2 = v => Math.round(v * 100) / 100;
+
+const ICON = {
+  select: '<path d="M5 3.5l13 6.6-5.6 1.8-1.9 5.6z"/><path d="M12.6 12.2l5 5"/>',
+  pen: '<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 012.8 0l.6.6a2 2 0 010 2.8L8.6 18.8z"/><path d="M14 6.6l3.4 3.4"/>',
+  hl: '<path d="M9.5 14.5L7 17l1 1h4l1.5-1.5"/><path d="M8.6 12.6l7.6-8.4a1.6 1.6 0 012.3-.1l1.5 1.4a1.6 1.6 0 01-.1 2.3l-8.4 7.6z"/><path d="M4 21h16"/>',
+  eraser: '<path d="M9 20h11"/><path d="M5.2 15.6l9.4-9.4a2 2 0 012.8 0l2.4 2.4a2 2 0 010 2.8L12 19.2H8.8z"/><path d="M9.6 11.2l5.2 5.2"/>',
+  connect: '<circle cx="5.5" cy="6" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/><path d="M7.6 7.8l8.4 7.6"/><path d="M12.4 15.6h3.8v-3.8"/>',
+  undo: '<path d="M9 5L4 10l5 5"/><path d="M4 10h10.5a5.5 5.5 0 010 11H11"/>',
+  redo: '<path d="M15 5l5 5-5 5"/><path d="M20 10H9.5a5.5 5.5 0 000 11H13"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  cards: '<rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 3.5h10.5a2 2 0 012 2V17"/>',
+  play: '<path d="M7.5 4.5l12 7.5-12 7.5z"/>',
+  zin: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M8 11h6M11 8v6"/>',
+  zout: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M8 11h6"/>',
+  fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+  grip: '<circle cx="9" cy="6" r="1.3" fill="currentColor"/><circle cx="15" cy="6" r="1.3" fill="currentColor"/><circle cx="9" cy="12" r="1.3" fill="currentColor"/><circle cx="15" cy="12" r="1.3" fill="currentColor"/><circle cx="9" cy="18" r="1.3" fill="currentColor"/><circle cx="15" cy="18" r="1.3" fill="currentColor"/>',
+  image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 8"/>',
+  text: '<path d="M5 7V5h14v2M12 5v14M9 19h6"/>',
+  board: '<rect x="3" y="4" width="18" height="16" rx="2"/><rect x="6" y="7" width="5" height="4" rx="1"/><rect x="13" y="12" width="5" height="5" rx="1"/>',
+  present: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M10 8l4 2-4 2z"/>',
+  more: '<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  left: '<path d="M15 5l-7 7 7 7"/>',
+  right: '<path d="M9 5l7 7-7 7"/>',
+  open: '<path d="M14 4h6v6M20 4l-8 8M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/>',
+  olist: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 4.5h1.5V9M3.8 9h3.2M3.8 13.2c.4-.8 1.2-1.2 2-1.1.9.1 1.4.9 1 1.7L3.8 17.5h3.4"/>',
+};
+function icon(name, size = 20) {
+  return `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ''}</svg>`;
+}
+function iconBtn(name, label, onclick, extraClass = '') {
+  return h('button', { class: 'icon-btn ' + extraClass, type: 'button', 'aria-label': label, title: label, html: icon(name), onclick });
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ---------- Konstanten ----------
+const PEN_COLORS = ['k', 'b', 'r', 'g', 'o', 'v'];
+const HL_COLORS = ['y', 'g', 'p', 'b'];
+const PEN_SIZES = [1.6, 3, 6];
+const HL_SIZES = [12, 20, 32];
+const CARD_COLORS = ['none', 'yellow', 'green', 'blue', 'rose', 'violet'];
+const PEN_NAMES = { k: 'Schwarz', b: 'Blau', r: 'Rot', g: 'Grün', o: 'Orange', v: 'Violett' };
+const HL_NAMES = { y: 'Gelb', g: 'Grün', p: 'Pink', b: 'Blau' };
+const CARD_NAMES = { none: 'Weiß', yellow: 'Gelb', green: 'Grün', blue: 'Blau', rose: 'Rosa', violet: 'Violett' };
+const INK_W = 640;            // Referenzbreite für Handschrift in Karten
+const CHUNK = 80000;          // Zeichen pro Datenbank-Dokument
+
+// ---------- Kompakte Strichkodierung ----------
+const FIN = '0123456789abcdefghijklmnopqrstuv';
+const CON = 'wxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+const DEC = {}; for (let i = 0; i < 32; i++) { DEC[FIN[i]] = [i, true]; DEC[CON[i]] = [i, false]; }
+function encInts(arr) {
+  let out = '';
+  for (const v of arr) {
+    let z = v >= 0 ? v * 2 : -v * 2 - 1;
+    while (z >= 32) { out += CON[z % 32]; z = Math.floor(z / 32); }
+    out += FIN[z];
+  }
+  return out;
+}
+function decInts(str) {
+  const out = []; let z = 0, mul = 1;
+  for (const ch of str) {
+    const d = DEC[ch]; if (!d) continue;
+    z += d[0] * mul;
+    if (d[1]) { out.push(z % 2 ? -(z + 1) / 2 : z / 2); z = 0; mul = 1; } else mul *= 32;
+  }
+  return out;
+}
+function encStroke(st) {
+  const a = []; let px = 0, py = 0, pp = 0;
+  for (let i = 0; i < st.pts.length; i += 3) {
+    const x = Math.round(st.pts[i] * 4), y = Math.round(st.pts[i + 1] * 4), p = Math.round(st.pts[i + 2] * 15);
+    a.push(x - px, y - py, p - pp); px = x; py = y; pp = p;
+  }
+  return { c: st.c, w: st.w, t: st.t, s: encInts(a) };
+}
+function decStroke(o) {
+  if (!o || typeof o.s !== 'string') return null;
+  const a = decInts(o.s); const pts = []; let x = 0, y = 0, p = 0;
+  for (let i = 0; i + 2 < a.length; i += 3) { x += a[i]; y += a[i + 1]; p += a[i + 2]; pts.push(x / 4, y / 4, p / 15); }
+  if (!pts.length) return null;
+  const t = o.t === 'hl' ? 'hl' : 'pen';
+  const pal = t === 'hl' ? HL_COLORS : PEN_COLORS;
+  return finishStroke({ c: pal.includes(o.c) ? o.c : pal[0], w: clamp(+o.w || 3, 0.5, 60), t, pts });
+}
+function finishStroke(st) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < st.pts.length; i += 3) { const x = st.pts[i], y = st.pts[i + 1]; if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+  st.bb = [x0, y0, x1, y1]; st.d = null; return st;
+}
+
+// ---------- Strich-Geometrie ----------
+function simplify(pts, eps) {
+  const n = pts.length / 3; if (n < 3) return pts;
+  const keep = new Uint8Array(n); keep[0] = keep[n - 1] = 1;
+  const stack = [[0, n - 1]]; const e2 = eps * eps;
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const ax = pts[a * 3], ay = pts[a * 3 + 1], bx = pts[b * 3], by = pts[b * 3 + 1];
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let best = -1, bi = -1;
+    for (let i = a + 1; i < b; i++) {
+      const px = pts[i * 3], py = pts[i * 3 + 1];
+      let t = L ? ((px - ax) * dx + (py - ay) * dy) / L : 0; t = clamp(t, 0, 1);
+      const qx = ax + t * dx - px, qy = ay + t * dy - py; const d = qx * qx + qy * qy;
+      if (d > best) { best = d; bi = i; }
+    }
+    if (best > e2) { keep[bi] = 1; stack.push([a, bi], [bi, b]); }
+  }
+  const out = []; for (let i = 0; i < n; i++) if (keep[i]) out.push(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]);
+  return out;
+}
+const f1 = v => Math.round(v * 10) / 10;
+function centerPath(pts) {
+  const n = pts.length / 3;
+  if (n === 1) return `M${f1(pts[0])} ${f1(pts[1])}l0.01 0`;
+  let d = `M${f1(pts[0])} ${f1(pts[1])}`;
+  for (let i = 1; i < n - 1; i++) {
+    const x = pts[i * 3], y = pts[i * 3 + 1], nx = pts[i * 3 + 3], ny = pts[i * 3 + 4];
+    d += `Q${f1(x)} ${f1(y)} ${f1((x + nx) / 2)} ${f1((y + ny) / 2)}`;
+  }
+  return d + `L${f1(pts[(n - 1) * 3])} ${f1(pts[(n - 1) * 3 + 1])}`;
+}
+function outlinePath(pts, size) {
+  const n = pts.length / 3;
+  const rad = p => (size / 2) * (0.4 + 1.2 * clamp(p, 0.05, 1));
+  if (n === 1 || (n === 2 && Math.hypot(pts[3] - pts[0], pts[4] - pts[1]) < 0.5)) {
+    const r = rad(pts[2]), x = pts[0], y = pts[1];
+    return `M${f1(x - r)} ${f1(y)}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`;
+  }
+  const L = [], R = [], rs = [];
+  for (let i = 0; i < n; i++) {
+    const i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1);
+    let tx = pts[i1 * 3] - pts[i0 * 3], ty = pts[i1 * 3 + 1] - pts[i0 * 3 + 1];
+    const len = Math.hypot(tx, ty) || 1; tx /= len; ty /= len;
+    const nx = -ty, ny = tx;
+    const taper = Math.min(1, 0.55 + 0.15 * Math.min(i, n - 1 - i));
+    const r = rad(pts[i * 3 + 2]) * taper; rs.push(r);
+    const x = pts[i * 3], y = pts[i * 3 + 1];
+    L.push([x + nx * r, y + ny * r]); R.push([x - nx * r, y - ny * r]);
+  }
+  const side = arr => {
+    let d = '';
+    for (let i = 1; i < arr.length - 1; i++) {
+      const [x, y] = arr[i], [nx, ny] = arr[i + 1];
+      d += `Q${f1(x)} ${f1(y)} ${f1((x + nx) / 2)} ${f1((y + ny) / 2)}`;
+    }
+    const last = arr[arr.length - 1];
+    return d + `L${f1(last[0])} ${f1(last[1])}`;
+  };
+  const re = rs[n - 1], rb = rs[0];
+  const Rr = R.slice().reverse();
+  return `M${f1(L[0][0])} ${f1(L[0][1])}` + side(L) +
+    `A${f1(re)} ${f1(re)} 0 0 0 ${f1(Rr[0][0])} ${f1(Rr[0][1])}` + side(Rr) +
+    `A${f1(rb)} ${f1(rb)} 0 0 0 ${f1(L[0][0])} ${f1(L[0][1])}Z`;
+}
+function strokeEl(st) {
+  if (st.t === 'hl') {
+    if (!st.d) st.d = centerPath(st.pts);
+    const p = sv('path', { d: st.d, class: 'hl', 'stroke-width': st.w });
+    p.style.stroke = `var(--hl-${st.c})`;
+    return p;
+  }
+  if (!st.d) st.d = outlinePath(st.pts, st.w);
+  const p = sv('path', { d: st.d });
+  p.style.fill = `var(--ink-${st.c})`;
+  return p;
+}
+function strokeHit(st, x, y, r) {
+  const bb = st.bb, m = r + st.w / 2;
+  if (x < bb[0] - m || x > bb[2] + m || y < bb[1] - m || y > bb[3] + m) return false;
+  const p = st.pts, n = p.length / 3, m2 = m * m;
+  if (n === 1) return (p[0] - x) ** 2 + (p[1] - y) ** 2 <= m2;
+  for (let i = 0; i < n - 1; i++) {
+    const ax = p[i * 3], ay = p[i * 3 + 1], bx = p[i * 3 + 3], by = p[i * 3 + 4];
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let t = L ? ((x - ax) * dx + (y - ay) * dy) / L : 0; t = clamp(t, 0, 1);
+    if ((ax + t * dx - x) ** 2 + (ay + t * dy - y) ** 2 <= m2) return true;
+  }
+  return false;
+}
+
+// ---------- HTML bereinigen ----------
+const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H1', 'H2', 'H3', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE']);
+const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'LINK', 'META', 'NOSCRIPT', 'IMG', 'VIDEO', 'AUDIO', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT']);
+function sanitizeHtml(html) {
+  const t = document.createElement('template'); t.innerHTML = String(html || '');
+  const walk = node => {
+    for (const ch of Array.from(node.childNodes)) {
+      if (ch.nodeType === 1) {
+        const tag = ch.tagName.toUpperCase();
+        if (DROP_TAGS.has(tag)) { ch.remove(); continue; }
+        walk(ch);
+        if (!ALLOWED_TAGS.has(tag)) { ch.replaceWith(...Array.from(ch.childNodes)); continue; }
+        for (const a of Array.from(ch.attributes)) ch.removeAttribute(a.name);
+      } else if (ch.nodeType !== 3) ch.remove();
+    }
+  };
+  walk(t.content);
+  return t.innerHTML;
+}
+function htmlToText(html) { const t = document.createElement('template'); t.innerHTML = html || ''; return (t.content.textContent || '').replace(/\s+/g, ' ').trim(); }
+const isEmptyHtml = html => !htmlToText(html);
+
+// ---------- Datenmodell ----------
+const S = { cards: new Map(), boards: new Map(), pres: new Map(), tomb: new Map() };
+const keyOf = e => ({ card: 'c_', board: 'b_', pres: 'p_' }[e.kind]) + e.id;
+function mapForKey(key) { return { c_: S.cards, b_: S.boards, p_: S.pres }[key.slice(0, 2)]; }
+function entityByKey(key) { const m = mapForKey(key); return m ? m.get(key.slice(2)) : undefined; }
+function localV(key) { const e = entityByKey(key); return e ? e.v : (S.tomb.get(key) || 0); }
+function setEntity(e) { mapForKey(keyOf(e)).set(e.id, e); S.tomb.delete(keyOf(e)); }
+function removeEntityLocal(key, v) { const m = mapForKey(key); if (m) m.delete(key.slice(2)); S.tomb.set(key, v); }
+
+function newCard(o = {}) {
+  return { kind: 'card', id: newId(), title: o.title || '', color: o.color || 'none', created: stamp(), v: stamp(),
+    blocks: o.blocks || [{ id: newId(), type: 'text', html: '' }] };
+}
+function newBoard(name) { return { kind: 'board', id: newId(), name: name || 'Neues Board', created: stamp(), v: stamp(), items: [], arrows: [], ink: [] }; }
+function newPres(name) { return { kind: 'pres', id: newId(), name: name || 'Neue Präsentation', created: stamp(), v: stamp(), cardIds: [] }; }
+
+function ser(e) {
+  if (e.kind === 'card') return {
+    kind: 'card', id: e.id, title: e.title, color: e.color, created: e.created, v: e.v,
+    blocks: e.blocks.map(b => b.type === 'ink' ? { id: b.id, type: 'ink', h: Math.round(b.h), strokes: b.strokes.map(encStroke) }
+      : b.type === 'image' ? { id: b.id, type: 'image', src: b.src, w: b.w, h: b.h }
+      : { id: b.id, type: 'text', html: b.html })
+  };
+  if (e.kind === 'board') return {
+    kind: 'board', id: e.id, name: e.name, created: e.created, v: e.v,
+    items: e.items.map(i => ({ cardId: i.cardId, x: r2(i.x), y: r2(i.y), w: r2(i.w), h: i.h ? r2(i.h) : null })),
+    arrows: e.arrows.map(a => ({ id: a.id, from: a.from, to: a.to })),
+    ink: e.ink.map(encStroke)
+  };
+  return { kind: 'pres', id: e.id, name: e.name, created: e.created, v: e.v, cardIds: e.cardIds.slice() };
+}
+const str = (v, max = 2000) => (typeof v === 'string' ? v : '').slice(0, max);
+const isId = v => typeof v === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(v);
+const num = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);
+function deser(o) {
+  if (!o || typeof o !== 'object' || !isId(o.id)) return null;
+  const base = { id: o.id, created: num(o.created, Date.now()), v: num(o.v, 1) };
+  if (o.kind === 'card') {
+    const blocks = [];
+    for (const b of Array.isArray(o.blocks) ? o.blocks : []) {
+      if (!b || typeof b !== 'object') continue;
+      const id = isId(b.id) ? b.id : newId();
+      if (b.type === 'ink') blocks.push({ id, type: 'ink', h: clamp(num(b.h, 300), 80, 6000), strokes: (Array.isArray(b.strokes) ? b.strokes : []).map(decStroke).filter(Boolean) });
+      else if (b.type === 'image') { if (typeof b.src === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,/.test(b.src)) blocks.push({ id, type: 'image', src: b.src, w: num(b.w, 0), h: num(b.h, 0) }); }
+      else blocks.push({ id, type: 'text', html: sanitizeHtml(str(b.html, 200000)) });
+    }
+    return { kind: 'card', ...base, title: str(o.title, 300), color: CARD_COLORS.includes(o.color) ? o.color : 'none', blocks };
+  }
+  if (o.kind === 'board') {
+    return { kind: 'board', ...base, name: str(o.name, 200) || 'Board',
+      items: (Array.isArray(o.items) ? o.items : []).filter(i => i && isId(i.cardId)).map(i => ({ cardId: i.cardId, x: num(i.x, 0), y: num(i.y, 0), w: clamp(num(i.w, 300), 160, 1400), h: i.h ? clamp(num(i.h, 200), 80, 4000) : null })),
+      arrows: (Array.isArray(o.arrows) ? o.arrows : []).filter(a => a && isId(a.from) && isId(a.to)).map(a => ({ id: isId(a.id) ? a.id : newId(), from: a.from, to: a.to })),
+      ink: (Array.isArray(o.ink) ? o.ink : []).map(decStroke).filter(Boolean) };
+  }
+  if (o.kind === 'pres') return { kind: 'pres', ...base, name: str(o.name, 200) || 'Präsentation', cardIds: (Array.isArray(o.cardIds) ? o.cardIds : []).filter(isId) };
+  return null;
+}
+
+// Änderung merken: Versionsstempel + Speichern anstoßen
+function touch(e) { e.v = stamp(); Persist.mark(keyOf(e)); }
+
+// ---------- UI-Zustand (pro Gerät) ----------
+const isPhone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
+const UI = {
+  view: null, editingCardId: null, sel: null,
+  tool: 'select', editorTool: 'pen',
+  ink: { penColor: 'k', penSize: 1, hlColor: 'y', hlSize: 1 },
+  fingerDraw: isPhone, views: {}, presTheme: 'light', narrowSidebar: false
+};
+function loadUiPrefs() {
+  try {
+    const o = JSON.parse(localStorage.getItem('kartentisch-ui') || 'null'); if (!o) return;
+    if (o.view && typeof o.view.type === 'string') UI.view = o.view;
+    if (o.ink) Object.assign(UI.ink, o.ink);
+    if (typeof o.fingerDraw === 'boolean') UI.fingerDraw = o.fingerDraw;
+    if (o.views && typeof o.views === 'object') UI.views = o.views;
+    if (['select', 'pen', 'hl', 'eraser'].includes(o.tool)) UI.tool = o.tool;
+    if (['pen', 'hl', 'eraser'].includes(o.editorTool)) UI.editorTool = o.editorTool;
+    if (o.presTheme === 'dark' || o.presTheme === 'light') UI.presTheme = o.presTheme;
+  } catch (e) { /* kein Speicher verfügbar */ }
+}
+const saveUiPrefs = debounce(() => {
+  try { localStorage.setItem('kartentisch-ui', JSON.stringify({ view: UI.view, ink: UI.ink, fingerDraw: UI.fingerDraw, views: UI.views, tool: UI.tool, editorTool: UI.editorTool, presTheme: UI.presTheme })); } catch (e) {}
+}, 400);
+
+// ---------- Lokaler Zwischenspeicher (IndexedDB, sonst localStorage) ----------
+const LocalCache = {
+  idb: null, ls: false,
+  async open() {
+    try {
+      this.idb = await Promise.race([
+        new Promise((res, rej) => {
+          const r = indexedDB.open('kartentisch', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('ents', { keyPath: 'key' });
+          r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+        }),
+        sleep(2500).then(() => { throw new Error('timeout'); })
+      ]);
+    } catch (e) {
+      this.idb = null;
+      try { localStorage.setItem('kt-probe', '1'); localStorage.removeItem('kt-probe'); this.ls = true; } catch (e2) { this.ls = false; }
+    }
+  },
+  async loadAll() {
+    if (this.idb) {
+      return new Promise(res => {
+        try { const req = this.idb.transaction('ents', 'readonly').objectStore('ents').getAll(); req.onsuccess = () => res(req.result || []); req.onerror = () => res([]); }
+        catch (e) { res([]); }
+      });
+    }
+    if (this.ls) {
+      const out = [];
+      try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('kt:')) { try { out.push(JSON.parse(localStorage.getItem(k))); } catch (e) {} } } } catch (e) {}
+      return out;
+    }
+    return [];
+  },
+  async putMany(recs) {
+    if (!recs.length) return;
+    if (this.idb) {
+      await new Promise(res => {
+        try { const tx = this.idb.transaction('ents', 'readwrite'); const st = tx.objectStore('ents'); for (const r of recs) st.put(r); tx.oncomplete = res; tx.onerror = res; tx.onabort = res; }
+        catch (e) { res(); }
+      });
+    } else if (this.ls) {
+      for (const r of recs) { try { localStorage.setItem('kt:' + r.key, JSON.stringify(r)); } catch (e) { /* voll */ } }
+    }
+  }
+};
+function recordFor(key) {
+  const e = entityByKey(key);
+  if (e) return { key, v: e.v, j: JSON.stringify(ser(e)) };
+  return { key, v: S.tomb.get(key) || stamp(), d: true };
+}
+function applyRecord(r) {
+  if (!r || typeof r.key !== 'string' || !/^[cbp]_/.test(r.key)) return;
+  if ((r.v || 0) <= localV(r.key)) return;
+  if (r.d) { removeEntityLocal(r.key, r.v); return; }
+  try { const e = deser(JSON.parse(r.j)); if (e && keyOf(e) === r.key) { e.v = r.v; setEntity(e); } } catch (e) {}
+}
+
+// ---------- Cloud-Synchronisierung (claude.ai-Datenbank, privat pro Person) ----------
+const Persist = {
+  mode: 'loading', db: null, userId: null, coll: null, unsub: null,
+  dirty: new Set(), localDirty: new Set(), flushing: false, timer: null,
+  remoteV: new Map(), remoteN: new Map(), merged: false, reachable: true,
+  mark(key) { this.dirty.add(key); this.localDirty.add(key); this.schedule(); updateSync(); },
+  schedule(ms = 700) { clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), ms); },
+  async flush() {
+    const lk = Array.from(this.localDirty); this.localDirty.clear();
+    await LocalCache.putMany(lk.map(recordFor));
+    if (this.mode !== 'cloud' || !this.merged || this.flushing) { updateSync(); return; }
+    this.flushing = true; updateSync();
+    try {
+      while (this.dirty.size && this.mode === 'cloud') {
+        const key = this.dirty.values().next().value; this.dirty.delete(key);
+        try { await this.writeKey(key); this.reachable = true; }
+        catch (err) {
+          const code = err && err.code;
+          this.dirty.add(key);
+          if (code === 'unavailable' || code === 'resource_exhausted' || !code) { this.reachable = false; updateSync(); await sleep(2000 + Math.random() * 2000); }
+          else if (code === 'quota_exceeded') { toast('Der Cloud-Speicher ist voll. Lösche große Bilder oder Karten, dann wird weiter synchronisiert.'); break; }
+          else { this.goLocal('denied'); break; }
+        }
+      }
+    } finally { this.flushing = false; updateSync(); if (this.dirty.size && this.mode === 'cloud') this.schedule(4000); }
+  },
+  async writeKey(key) {
+    const e = entityByKey(key);
+    const coll = this.coll;
+    const oldN = this.remoteN.get(key) || 1;
+    if (!e) {
+      const v = S.tomb.get(key) || stamp();
+      await coll.doc(key).set({ k: key.slice(0, 1), v, d: true, n: 1 });
+      for (let i = 1; i < oldN; i++) await coll.doc(key + '~' + i).delete();
+      this.remoteV.set(key, v); this.remoteN.set(key, 1);
+      return;
+    }
+    const v = e.v; const json = JSON.stringify(ser(e));
+    const parts = []; for (let i = 0; i < json.length; i += CHUNK) parts.push(json.slice(i, i + CHUNK));
+    if (!parts.length) parts.push('');
+    for (let i = 1; i < parts.length; i++) await coll.doc(key + '~' + i).set({ j: parts[i], v });
+    await coll.doc(key).set({ k: key.slice(0, 1), v, n: parts.length, j: parts[0] });
+    for (let i = parts.length; i < oldN; i++) await coll.doc(key + '~' + i).delete();
+    this.remoteV.set(key, v); this.remoteN.set(key, parts.length);
+  },
+  onSnap(snap) {
+    const byId = new Map();
+    for (const d of snap.docs) if (d.exists) byId.set(d.id, d.data());
+    const changed = new Set();
+    for (const [id, body] of byId) {
+      if (id.includes('~') || !/^[cbp]_/.test(id) || !body) continue;
+      const rv = num(body.v, 0); this.remoteV.set(id, rv); this.remoteN.set(id, num(body.n, 1));
+      if (rv <= localV(id)) continue;
+      if (body.d) { removeEntityLocal(id, rv); this.localDirty.add(id); changed.add(id); continue; }
+      const n = num(body.n, 1); const parts = [str(body.j, CHUNK + 10)]; let ok = true;
+      for (let i = 1; i < n; i++) { const c = byId.get(id + '~' + i); if (!c || c.v !== rv || typeof c.j !== 'string') { ok = false; break; } parts.push(c.j); }
+      if (!ok) continue;
+      try { const e = deser(JSON.parse(parts.join(''))); if (e && keyOf(e) === id) { e.v = rv; setEntity(e); this.localDirty.add(id); changed.add(id); } } catch (err) {}
+    }
+    if (!snap.metadata.fromCache) {
+      this.reachable = true;
+      if (!this.merged) {
+        this.merged = true;
+        const all = [...S.cards.values(), ...S.boards.values(), ...S.pres.values()];
+        for (const e of all) { const k = keyOf(e); if (e.v > (this.remoteV.get(k) || 0)) this.dirty.add(k); }
+        for (const [k, v] of S.tomb) if (v > (this.remoteV.get(k) || 0)) this.dirty.add(k);
+        if (isEmptyStore()) seedExamples();
+        this.schedule(300);
+        onDataChanged(null);
+        return;
+      }
+    }
+    if (changed.size) { this.schedule(300); onDataChanged(changed); }
+    updateSync();
+  },
+  goLocal(reason) {
+    if (this.unsub) { try { this.unsub(); } catch (e) {} this.unsub = null; }
+    const first = this.mode === 'loading';
+    this.mode = 'local'; this.localReason = reason;
+    if (first && isEmptyStore()) seedExamples();
+    if (reason === 'denied') toast('Speichern in der Cloud wurde abgelehnt. Deine Änderungen bleiben auf diesem Gerät.');
+    onDataChanged(null); updateSync();
+  }
+};
+function isEmptyStore() { return !S.cards.size && !S.boards.size && !S.pres.size && !S.tomb.size; }
+
+async function connectCloud() {
+  let api = null;
+  for (let i = 0; i < 30 && !api; i++) { if (window.claude && typeof window.claude.use === 'function') api = window.claude; else await sleep(100); }
+  if (!api) { Persist.goLocal('nohost'); return; }
+  let db = null, user = null, uid = null;
+  try { [db, user] = await Promise.all([api.use('db'), api.use('user')]); } catch (e) {}
+  try { uid = user ? await user.id() : null; } catch (e) {}
+  if (!db || !uid) { Persist.goLocal('nouser'); return; }
+  Persist.db = db; Persist.userId = uid; Persist.mode = 'cloud';
+  try { Persist.coll = db.collection('data/users/' + uid); } catch (e) { Persist.goLocal('nouser'); return; }
+  updateSync();
+  const timer = setTimeout(() => { if (!Persist.merged) { Persist.reachable = false; updateSync(); if (!S.boards.size) onDataChanged(null); } }, 10000);
+  Persist.unsub = Persist.coll.onSnapshot(snap => {
+    if (!snap.metadata.fromCache) clearTimeout(timer);
+    Persist.onSnap(snap);
+  }, err => {
+    clearTimeout(timer);
+    if (err && err.code === 'unavailable') { Persist.reachable = false; updateSync(); setTimeout(() => { Persist.mode = 'loading'; connectCloud(); }, 5000); }
+    else Persist.goLocal('error');
+  });
+}
+
+function updateSync() {
+  const el = $('#sync'), tx = $('#syncText'); if (!el) return;
+  el.className = 'sync';
+  const pending = Persist.dirty.size > 0 || Persist.flushing;
+  if (Persist.mode === 'loading') { tx.textContent = 'Verbinde …'; el.classList.add('busy'); }
+  else if (Persist.mode === 'local') {
+    tx.textContent = Persist.localReason === 'nohost' ? 'Nur auf diesem Gerät gespeichert' : Persist.localReason === 'nouser' ? 'Nicht angemeldet: nur auf diesem Gerät' : 'Nur auf diesem Gerät gespeichert';
+    el.classList.add('warn');
+  }
+  else if (!Persist.merged || !Persist.reachable) { tx.textContent = Persist.merged ? 'Offline: wird später synchronisiert' : 'Lade aus der Cloud …'; el.classList.add(Persist.merged ? 'warn' : 'busy'); }
+  else if (pending) { tx.textContent = 'Speichert …'; el.classList.add('busy'); }
+  else { tx.textContent = 'Synchronisiert'; el.classList.add('ok'); }
+}
+
+// ---------- Beispielinhalte (nur beim allerersten Start) ----------
+function seedInk(fn, steps, c, w, t = 'pen') {
+  const pts = []; for (let i = 0; i <= steps; i++) { const [x, y, p] = fn(i / steps); pts.push(x, y, p); }
+  return finishStroke({ c, w, t, pts });
+}
+function seedExamples() {
+  const txt = html => ({ id: newId(), type: 'text', html });
+  const c1 = newCard({ title: 'Willkommen am Kartentisch', color: 'blue', blocks: [txt('<p>Das ist ein <b>Beispiel-Board</b>. Karten sind Notizen aus Text, Handschrift und Bildern.</p><ul><li><b>Doppelklick</b> oder <b>Doppeltipp</b> auf eine Karte öffnet sie.</li><li><b>+ Karte</b> legt eine neue Karte an, ein Doppelklick auf eine leere Stelle ebenso.</li><li>Ziehen verschiebt, die Ecke unten rechts ändert die Größe.</li></ul>')] });
+  const c2 = newCard({ title: 'Eine Karte, viele Orte', color: 'yellow', blocks: [txt('<p>Jede Karte liegt in der <b>Kartenbibliothek</b>. Dieselbe Karte kann auf mehreren Boards liegen. Änderst du sie, ändert sie sich überall.</p><p>„Vom Board entfernen“ behält die Karte, „Karte löschen“ entfernt sie überall.</p>')] });
+  const loops = seedInk(t => [40 + t * 520 + 20 * Math.cos(t * Math.PI * 18), 62 + 22 * Math.sin(t * Math.PI * 18) + 6 * Math.sin(t * 5), 0.35 + 0.3 * Math.sin(t * Math.PI)], 260, 'b', 3);
+  const under = seedInk(t => [44 + t * 500, 112 + 3 * Math.sin(t * 9), 0.45 + 0.2 * Math.sin(t * Math.PI)], 40, 'r', 3);
+  const mark = seedInk(t => [60 + t * 230, 60 + 2 * Math.sin(t * 6), 0.5], 30, 'y', 20, 'hl');
+  const c3 = newCard({ title: 'Handschrift', color: 'green', blocks: [
+    txt('<p>Mit dem <b>Apple Pencil</b> schreibst du direkt in Karten oder frei aufs Board. Der Finger verschiebt nur.</p><p>Auf dem iPhone: in der Seitenleiste „Mit Finger zeichnen“ einschalten.</p>'),
+    { id: newId(), type: 'ink', h: 150, strokes: [mark, loops, under] }] });
+  const c4 = newCard({ title: 'Präsentieren', color: 'rose', blocks: [txt('<p>Sammle Karten in einer <b>Präsentation</b> (Seitenleiste), ordne sie per Ziehen und starte mit <b>Präsentieren</b>.</p><p>Im Vollbild: Pfeiltasten, Leertaste, Wischen oder Tippen. <b>Esc</b> beendet.</p>')] });
+  const c5 = newCard({ title: 'Speichern und Synchronisieren', color: 'violet', blocks: [txt('<p>Deine Karten liegen privat in deinem claude.ai-Konto und erscheinen auf Mac, iPad und iPhone, sobald du diese Seite dort öffnest.</p><p><b>Exportieren</b> erstellt eine Sicherungsdatei.</p>')] });
+  const b = newBoard('Erste Schritte');
+  b.items = [
+    { cardId: c1.id, x: 60, y: 70, w: 360, h: null },
+    { cardId: c2.id, x: 500, y: 40, w: 320, h: null },
+    { cardId: c3.id, x: 500, y: 330, w: 360, h: null },
+    { cardId: c4.id, x: 920, y: 90, w: 320, h: null },
+    { cardId: c5.id, x: 60, y: 420, w: 360, h: null }];
+  b.arrows = [{ id: newId(), from: c1.id, to: c2.id }, { id: newId(), from: c2.id, to: c4.id }, { id: newId(), from: c2.id, to: c3.id }, { id: newId(), from: c1.id, to: c5.id }];
+  const star = seedInk(t => { const a = t * Math.PI * 4 - Math.PI / 2; const r = (Math.round(t * 10) % 2 ? 18 : 42) * (0.9 + 0.1 * Math.sin(t * 7)); return [1080 + Math.cos(a) * r, 420 + Math.sin(a) * r, 0.5]; }, 10, 'o', 4);
+  const swoosh = seedInk(t => [935 + t * 120, 330 + 70 * t * t, 0.3 + 0.4 * t], 30, 'o', 4);
+  b.ink = [simplifyStroke(star), swoosh];
+  const p = newPres('Beispiel-Präsentation'); p.cardIds = [c1.id, c3.id, c4.id];
+  for (const e of [c1, c2, c3, c4, c5, b, p]) { setEntity(e); touch(e); }
+  if (!UI.view || !resolveView(UI.view)) UI.view = { type: 'board', id: b.id };
+}
+function simplifyStroke(st) { st.pts = simplify(st.pts, 0.2); return finishStroke(st); }
+
+// ---------- Abfragen ----------
+const sortedBoards = () => [...S.boards.values()].sort((a, b) => a.created - b.created);
+const sortedPres = () => [...S.pres.values()].sort((a, b) => a.created - b.created);
+function boardsWithCard(cardId) { return sortedBoards().filter(b => b.items.some(i => i.cardId === cardId)); }
+function presWithCard(cardId) { return sortedPres().filter(p => p.cardIds.includes(cardId)); }
+function cardSnippet(c) {
+  for (const b of c.blocks) { if (b.type === 'text') { const t = htmlToText(b.html); if (t) return t.slice(0, 120); } }
+  if (c.blocks.some(b => b.type === 'ink' && b.strokes.length)) return 'Handschrift';
+  if (c.blocks.some(b => b.type === 'image')) return 'Bild';
+  return 'Leere Karte';
+}
+const cardTitle = c => (c && c.title.trim()) || 'Ohne Titel';
+function resolveView(v) {
+  if (!v) return false;
+  if (v.type === 'board') return S.boards.has(v.id);
+  if (v.type === 'pres') return S.pres.has(v.id);
+  return v.type === 'library';
+}
+
+// ---------- Karteninhalt rendern ----------
+function inkSvg(block, crop) {
+  let hgt = block.h;
+  if (crop) { let maxY = 0; for (const st of block.strokes) maxY = Math.max(maxY, st.bb[3] + st.w); hgt = Math.max(30, Math.min(block.h, maxY + 14)); }
+  const svg = sv('svg', { viewBox: `0 0 ${INK_W} ${r2(hgt)}`, class: 'cc-ink', preserveAspectRatio: 'xMinYMin meet' });
+  const g = sv('g'); for (const st of block.strokes) g.append(strokeEl(st)); svg.append(g);
+  return svg;
+}
+function renderCardContent(card, opts = {}) {
+  const wrap = h('div', { class: 'cc' });
+  const t = card.title.trim();
+  wrap.append(h('div', { class: 'cc-title' + (t ? '' : ' empty'), text: t || 'Ohne Titel' }));
+  for (const b of card.blocks) {
+    if (b.type === 'text') { if (isEmptyHtml(b.html)) continue; const d = h('div', { class: 'cc-text' }); d.innerHTML = b.html; wrap.append(d); }
+    else if (b.type === 'ink') { if (b.strokes.length) wrap.append(inkSvg(b, true)); }
+    else if (b.type === 'image') { const img = h('img', { class: 'cc-img', src: b.src, alt: '', draggable: 'false' }); if (opts.onImg) img.addEventListener('load', opts.onImg); wrap.append(img); }
+  }
+  return wrap;
+}
+const colorClass = c => (c && c !== 'none' ? 'c-' + c : '');
+
+// ---------- Rückgängig für Handschrift ----------
+const Undo = {
+  stack: [], redoStack: [],
+  push(entry) { this.stack.push(entry); if (this.stack.length > 300) this.stack.shift(); this.redoStack = []; refreshUndoButtons(); },
+  undo() { const e = this.stack.pop(); if (!e) return; applyInkOp(e, true); this.redoStack.push(e); refreshUndoButtons(); },
+  redo() { const e = this.redoStack.pop(); if (!e) return; applyInkOp(e, false); this.stack.push(e); refreshUndoButtons(); }
+};
+function inkTarget(t) {
+  if (t.kind === 'board') { const b = S.boards.get(t.id); return b ? { arr: b.ink, ent: b } : null; }
+  const c = S.cards.get(t.cardId); if (!c) return null;
+  const blk = c.blocks.find(b => b.id === t.blockId); return blk ? { arr: blk.strokes, ent: c } : null;
+}
+function applyInkOp(e, inverse) {
+  const tg = inkTarget(e.target); if (!tg) return;
+  const add = (e.op === 'add') !== inverse;
+  for (const st of e.strokes) { const i = tg.arr.indexOf(st); if (add && i < 0) tg.arr.push(st); if (!add && i >= 0) tg.arr.splice(i, 1); }
+  touch(tg.ent);
+  if (e.target.kind === 'board') { if (BV.boardId === e.target.id) BV.renderInk(); }
+  else { Editor.rerenderInk(e.target.cardId, e.target.blockId); refreshCardEverywhere(e.target.cardId); }
+}
+function refreshUndoButtons() {
+  for (const b of $$('[data-act="undo"]')) b.disabled = !Undo.stack.length;
+  for (const b of $$('[data-act="redo"]')) b.disabled = !Undo.redoStack.length;
+}
+
+// ---------- Werkzeugleiste (Stift, Marker, Radierer, Farben, Größen) ----------
+function inkPalette(ctx) {
+  const frag = document.createDocumentFragment();
+  const tool = ctx === 'board' ? UI.tool : UI.editorTool;
+  const setTool = t => { if (ctx === 'board') { UI.tool = t; BV.cancelConnect(); BV.syncToolClass(); if (t !== 'select') BV.select(null); } else UI.editorTool = t; saveUiPrefs(); rerenderPalettes(); };
+  const tools = ctx === 'board'
+    ? [['select', 'Auswählen und verschieben (V)'], ['pen', 'Stift (P)'], ['hl', 'Textmarker (H)'], ['eraser', 'Radierer (E)'], ['connect', 'Karten verbinden (C)']]
+    : [['pen', 'Stift'], ['hl', 'Textmarker'], ['eraser', 'Radierer']];
+  for (const [t, label] of tools) frag.append(iconBtn(t, label, () => setTool(t), tool === t ? 'active' : ''));
+  if (tool === 'pen' || tool === 'hl') {
+    frag.append(h('span', { class: 'tb-sep' }));
+    const hl = tool === 'hl';
+    const colors = hl ? HL_COLORS : PEN_COLORS, names = hl ? HL_NAMES : PEN_NAMES;
+    const cur = hl ? UI.ink.hlColor : UI.ink.penColor;
+    for (const c of colors) {
+      const b = h('button', { class: 'swatch' + (c === cur ? ' active' : ''), type: 'button', title: names[c], 'aria-label': (hl ? 'Marker ' : 'Stift ') + names[c],
+        onclick: () => { if (hl) UI.ink.hlColor = c; else UI.ink.penColor = c; saveUiPrefs(); rerenderPalettes(); } });
+      const i = h('i'); i.style.background = `var(--${hl ? 'hl' : 'ink'}-${c})`; b.append(i); frag.append(b);
+    }
+    frag.append(h('span', { class: 'tb-sep' }));
+    const curS = hl ? UI.ink.hlSize : UI.ink.penSize;
+    [0, 1, 2].forEach(si => {
+      const b = h('button', { class: 'size' + (si === curS ? ' active' : ''), type: 'button', title: ['Fein', 'Mittel', 'Breit'][si], 'aria-label': 'Strichstärke ' + ['fein', 'mittel', 'breit'][si],
+        onclick: () => { if (hl) UI.ink.hlSize = si; else UI.ink.penSize = si; saveUiPrefs(); rerenderPalettes(); } });
+      const i = h('i'); const d = [4, 7, 11][si]; i.style.width = i.style.height = d + 'px'; b.append(i); frag.append(b);
+    });
+  }
+  frag.append(h('span', { class: 'tb-sep' }));
+  const u = iconBtn('undo', 'Rückgängig (⌘Z)', () => Undo.undo()); u.dataset.act = 'undo';
+  const r = iconBtn('redo', 'Wiederholen (⇧⌘Z)', () => Undo.redo()); r.dataset.act = 'redo';
+  frag.append(u, r);
+  return frag;
+}
+function rerenderPalettes() {
+  const tb = $('#boardToolbar'); if (tb) { tb.replaceChildren(inkPalette('board')); }
+  Editor.renderInkTools();
+  refreshUndoButtons();
+}
+function currentStrokeStyle(tool) {
+  if (tool === 'hl') return { t: 'hl', c: UI.ink.hlColor, w: HL_SIZES[UI.ink.hlSize] || 20 };
+  return { t: 'pen', c: UI.ink.penColor, w: PEN_SIZES[UI.ink.penSize] || 3 };
+}
+
+// ---------- Zeichenvorgang (gemeinsam für Board und Karten) ----------
+class InkGesture {
+  constructor({ tool, layer, strokes, scale, target, onDone }) {
+    this.tool = tool; this.layer = layer; this.strokes = strokes; this.scale = scale; this.target = target; this.onDone = onDone;
+    this.removed = [];
+    if (tool !== 'eraser') { Object.assign(this, currentStrokeStyle(tool)); this.pts = []; this.el = null; }
+  }
+  add(x, y, p) {
+    if (this.tool === 'eraser') { this.erase(x, y); return; }
+    const pts = this.pts, n = pts.length;
+    if (n) {
+      const lx = pts[n - 3], ly = pts[n - 2], dx = x - lx, dy = y - ly;
+      if (dx * dx + dy * dy < (0.7 * this.scale) ** 2) return;
+      x = lx + dx * 0.62; y = ly + dy * 0.62; p = pts[n - 1] + (p - pts[n - 1]) * 0.35;
+    }
+    pts.push(x, y, p); this.draw();
+  }
+  draw() {
+    const st = { t: this.t, c: this.c, w: this.w, pts: this.pts };
+    const d = this.t === 'hl' ? centerPath(this.pts) : outlinePath(this.pts, this.w);
+    if (!this.el) { this.el = strokeEl(Object.assign(st, { d })); this.layer.append(this.el); }
+    else this.el.setAttribute('d', d);
+  }
+  erase(x, y) {
+    const r = 9 * this.scale;
+    for (let i = this.strokes.length - 1; i >= 0; i--) {
+      const st = this.strokes[i];
+      if (strokeHit(st, x, y, r)) { this.strokes.splice(i, 1); this.removed.push(st); if (st._el) st._el.remove(); }
+    }
+  }
+  end(x, y, p) {
+    if (this.tool === 'eraser') { if (this.removed.length) { Undo.push({ target: this.target, op: 'remove', strokes: this.removed }); this.onDone && this.onDone(); } return; }
+    if (x != null && this.pts.length) { const n = this.pts.length; this.pts[n - 3] = x; this.pts[n - 2] = y; }
+    if (!this.pts.length) return;
+    const st = finishStroke({ t: this.t, c: this.c, w: this.w, pts: simplify(this.pts, 0.28 * this.scale) });
+    if (this.el) this.el.remove();
+    this.strokes.push(st);
+    Undo.push({ target: this.target, op: 'add', strokes: [st] });
+    this.onDone && this.onDone(st);
+  }
+  cancel() { if (this.el) this.el.remove(); if (this.removed.length) { this.strokes.push(...this.removed); this.onDone && this.onDone(); } }
+}
+const penPressure = e => (e.pointerType === 'pen' ? (e.pressure > 0 ? e.pressure : 0.5) : 0.5);
+const pointerMayDraw = e => e.pointerType === 'pen' || e.pointerType === 'mouse' || UI.fingerDraw;
+
+// ---------- Board-Ansicht ----------
+const BV = {
+  boardId: null, root: null, vp: null, world: null, cardsLayer: null, arrowsSvg: null, arrowsG: null, inkG: null, liveG: null,
+  cardEls: new Map(), pointers: new Map(), gesture: null, lastTap: null, connectFrom: null, selbar: null, gestureZoom: null,
+  board() { return S.boards.get(this.boardId); },
+  view() { return UI.views[this.boardId] || (UI.views[this.boardId] = { x: 80, y: 80, z: 1 }); },
+  mount(id) {
+    this.boardId = id; this.cardEls.clear(); this.pointers.clear(); this.gesture = null; this.connectFrom = null; UI.sel = null;
+    const hadView = !!UI.views[id];
+    if (this.ro) this.ro.disconnect();
+    this.ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.arrowsSoon()) : null;
+    const b = this.board();
+    const name = h('input', { class: 'title-input', id: 'boardName', 'aria-label': 'Name des Boards', value: b.name, maxlength: '120' });
+    name.addEventListener('input', () => { const bb = this.board(); if (!bb) return; bb.name = name.value; touch(bb); renderSidebarSoon(); });
+    const head = h('header', { class: 'view-head' },
+      menuButton(),
+      h('div', { class: 'grow' }, name),
+      h('button', { class: 'btn primary', type: 'button', html: icon('plus', 18) + '<span>Karte</span>', title: 'Neue Karte auf dieses Board', onclick: () => this.addNewCard() }),
+      h('button', { class: 'btn', type: 'button', html: icon('cards', 18) + '<span class="hide-narrow">Aus Bibliothek</span>', title: 'Vorhandene Karte auf das Board legen', 'aria-label': 'Aus Bibliothek', onclick: () => this.addFromLibrary() }),
+      iconBtn('more', 'Weitere Aktionen', ev => this.moreMenu(ev.currentTarget)));
+    this.vp = h('div', { class: 'viewport', id: 'viewport', tabindex: '-1' });
+    this.world = h('div', { class: 'world' });
+    this.arrowsSvg = sv('svg', { class: 'layer-svg' });
+    const defs = sv('defs'); const mk = sv('marker', { id: 'ah', viewBox: '0 0 10 10', refX: '8.5', refY: '5', markerWidth: '6', markerHeight: '6', orient: 'auto-start-reverse' });
+    const mp = sv('path', { d: 'M0 0L10 5L0 10z' }); mp.style.fill = 'var(--muted)'; mk.append(mp);
+    const mk2 = mk.cloneNode(true); mk2.setAttribute('id', 'ahs'); mk2.firstChild.style.fill = 'var(--accent)';
+    defs.append(mk, mk2); this.arrowsSvg.append(defs); this.arrowsG = sv('g'); this.arrowsSvg.append(this.arrowsG);
+    this.cardsLayer = h('div');
+    const inkSvgEl = sv('svg', { class: 'layer-svg' }); this.inkG = sv('g'); this.liveG = sv('g'); inkSvgEl.append(this.inkG, this.liveG);
+    this.world.append(this.arrowsSvg, this.cardsLayer, inkSvgEl);
+    this.hint = h('div', { class: 'board-hint', hidden: true, html: '<b>Ein leeres Board</b>Lege mit „+ Karte“ eine neue Karte an oder hole eine aus der Bibliothek. Ein Doppelklick auf die Fläche geht auch.' });
+    this.selbar = h('div', { class: 'selbar', hidden: true });
+    this.vp.append(this.world, this.hint);
+    const toolbar = h('div', { class: 'toolbar', id: 'boardToolbar', role: 'toolbar', 'aria-label': 'Werkzeuge' });
+    this.zoomLabel = h('button', { class: 'pct', type: 'button', title: 'Auf 100 % setzen', onclick: () => this.zoomTo(1) });
+    const zoombar = h('div', { class: 'zoombar' },
+      iconBtn('zout', 'Verkleinern', () => this.zoomBy(1 / 1.25)), this.zoomLabel, iconBtn('zin', 'Vergrößern', () => this.zoomBy(1.25)),
+      iconBtn('fit', 'Alles zeigen', () => this.fit()));
+    const wrap = h('div', { class: 'vp-wrap' }, this.vp, toolbar, zoombar, this.selbar);
+    const root = h('div', { style: 'display:flex;flex-direction:column;flex:1;min-height:0' }, head, wrap);
+    $('#main').replaceChildren(root); this.root = root;
+    toolbar.append(inkPalette('board'));
+    this.bindEvents();
+    this.syncToolClass();
+    this.renderAll();
+    if (!hadView) requestAnimationFrame(() => this.fit(true)); else this.applyView();
+    refreshUndoButtons();
+  },
+  unmount() { if (this.ro) this.ro.disconnect(); this.boardId = null; this.root = null; this.cardEls.clear(); },
+  arrowsSoon() {
+    if (this._arrowRaf) return;
+    this._arrowRaf = requestAnimationFrame(() => { this._arrowRaf = 0; if (!this.root) return; this.renderArrows(); this.positionSelbar(); for (const el of this.cardEls.values()) this.updateClip(el); });
+  },
+  syncToolClass() { if (!this.vp) return; this.vp.className = 'viewport tool-' + UI.tool; },
+  renderAll() { this.renderCards(); this.renderInk(); this.renderHint(); requestAnimationFrame(() => { this.renderArrows(); this.positionSelbar(); }); },
+  renderHint() { const b = this.board(); if (this.hint) this.hint.hidden = !!(b && (b.items.length || b.ink.length)); },
+  renderCards() {
+    const b = this.board(); if (!b) return;
+    const seen = new Set();
+    for (const it of b.items) {
+      const card = S.cards.get(it.cardId); if (!card) continue;
+      seen.add(it.cardId);
+      let el = this.cardEls.get(it.cardId);
+      if (!el) {
+        el = h('div', { class: 'bcard', 'data-card': it.cardId }, h('div', { class: 'bc-body' }), h('div', { class: 'fade' }), h('div', { class: 'bcard-resize', title: 'Größe ändern' }));
+        this.cardsLayer.append(el); this.cardEls.set(it.cardId, el); el._v = -1;
+        if (this.ro) this.ro.observe(el);
+      }
+      this.placeCard(el, it);
+      if (el._v !== card.v || el._color !== card.color) {
+        el._v = card.v; el._color = card.color;
+        el.className = 'bcard ' + colorClass(card.color) + (it.h ? '' : ' auto') + (UI.sel && UI.sel.type === 'card' && UI.sel.id === it.cardId ? ' sel' : '');
+        el.firstChild.replaceChildren(renderCardContent(card, { onImg: () => { this.updateClip(el); this.renderArrows(); } }));
+      }
+      el.classList.toggle('auto', !it.h);
+      this.updateClip(el);
+    }
+    for (const [id, el] of this.cardEls) if (!seen.has(id)) { el.remove(); this.cardEls.delete(id); }
+    // Reihenfolge der Elemente = Reihenfolge im Board (später = oben)
+    for (const it of b.items) { const el = this.cardEls.get(it.cardId); if (el) this.cardsLayer.append(el); }
+  },
+  placeCard(el, it) {
+    el.style.transform = `translate(${it.x}px,${it.y}px)`; el.style.width = it.w + 'px';
+    el.style.height = it.h ? it.h + 'px' : '';
+  },
+  updateClip(el) { const body = el.firstChild; el.classList.toggle('clip', body.scrollHeight > el.clientHeight + 2); },
+  renderInk() {
+    const b = this.board(); if (!b) return;
+    this.inkG.replaceChildren();
+    for (const st of b.ink) { const p = strokeEl(st); st._el = p; this.inkG.append(p); }
+    this.renderHint();
+  },
+  cardRect(cardId) {
+    const b = this.board(); const it = b.items.find(i => i.cardId === cardId); if (!it) return null;
+    const el = this.cardEls.get(cardId); return { x: it.x, y: it.y, w: it.w, h: el ? el.offsetHeight : (it.h || 160) };
+  },
+  renderArrows() {
+    const b = this.board(); if (!b || !this.arrowsG) return;
+    this.arrowsG.replaceChildren();
+    for (const a of b.arrows) {
+      const ra = this.cardRect(a.from), rb = this.cardRect(a.to); if (!ra || !rb) continue;
+      const ca = [ra.x + ra.w / 2, ra.y + ra.h / 2], cb = [rb.x + rb.w / 2, rb.y + rb.h / 2];
+      const p1 = clipToRect(ca, cb, ra, 6), p2 = clipToRect(cb, ca, rb, 8);
+      const sel = UI.sel && UI.sel.type === 'arrow' && UI.sel.id === a.id;
+      const g = sv('g', { class: 'arrow' + (sel ? ' sel' : ''), 'data-arrow': a.id });
+      const d = `M${f1(p1[0])} ${f1(p1[1])}L${f1(p2[0])} ${f1(p2[1])}`;
+      g.append(sv('path', { d, class: 'arrow-line', 'marker-end': sel ? 'url(#ahs)' : 'url(#ah)' }), sv('path', { d, class: 'arrow-hit', 'data-arrow': a.id }));
+      this.arrowsG.append(g);
+    }
+  },
+  applyView() {
+    const v = this.view(); if (!this.world) return;
+    this.world.style.transform = `translate(${v.x}px,${v.y}px) scale(${v.z})`;
+    const g = 24 * v.z; this.vp.style.backgroundSize = `${g}px ${g}px`; this.vp.style.backgroundPosition = `${v.x}px ${v.y}px`;
+    if (this.zoomLabel) this.zoomLabel.textContent = Math.round(v.z * 100) + ' %';
+    this.positionSelbar();
+    saveUiPrefs();
+  },
+  toWorld(cx, cy) { const r = this.vp.getBoundingClientRect(), v = this.view(); return [(cx - r.left - v.x) / v.z, (cy - r.top - v.y) / v.z]; },
+  zoomAt(z, cx, cy) {
+    const v = this.view(), r = this.vp.getBoundingClientRect();
+    z = clamp(z, 0.15, 4); const sx = cx - r.left, sy = cy - r.top;
+    const wx = (sx - v.x) / v.z, wy = (sy - v.y) / v.z;
+    v.z = z; v.x = sx - wx * z; v.y = sy - wy * z; this.applyView();
+  },
+  zoomBy(f) { const r = this.vp.getBoundingClientRect(); this.zoomAt(this.view().z * f, r.left + r.width / 2, r.top + r.height / 2); },
+  zoomTo(z) { const r = this.vp.getBoundingClientRect(); this.zoomAt(z, r.left + r.width / 2, r.top + r.height / 2); },
+  fit(initial) {
+    const b = this.board(); if (!b || !this.vp) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const it of b.items) { const rc = this.cardRect(it.cardId); if (!rc) continue; x0 = Math.min(x0, rc.x); y0 = Math.min(y0, rc.y); x1 = Math.max(x1, rc.x + rc.w); y1 = Math.max(y1, rc.y + rc.h); }
+    for (const st of b.ink) { x0 = Math.min(x0, st.bb[0]); y0 = Math.min(y0, st.bb[1]); x1 = Math.max(x1, st.bb[2]); y1 = Math.max(y1, st.bb[3]); }
+    const r = this.vp.getBoundingClientRect(); const v = this.view();
+    if (!isFinite(x0)) { v.x = r.width / 2; v.y = r.height / 2; v.z = 1; this.applyView(); return; }
+    const pad = 60, top = 64;
+    const side = r.width < 600 ? 20 : pad;
+    const z = clamp(Math.min((r.width - side * 2) / (x1 - x0), (r.height - pad - top) / (y1 - y0)), initial ? 0.5 : 0.15, initial ? 1 : 2);
+    v.z = z;
+    // Passt das Board nicht ganz hinein (z. B. iPhone), oben links lesbar beginnen
+    v.x = (x1 - x0) * z > r.width - side * 2 ? side - x0 * z : (r.width - (x1 - x0) * z) / 2 - x0 * z;
+    v.y = (y1 - y0) * z > r.height - top - pad ? top + 12 - y0 * z : top + (r.height - top - pad - (y1 - y0) * z) / 2 + pad / 2 - y0 * z;
+    this.applyView();
+  },
+  viewCenter() { const r = this.vp.getBoundingClientRect(); return this.toWorld(r.left + r.width / 2, r.top + r.height / 2); },
+
+  // --- Auswahl ---
+  select(sel) {
+    UI.sel = sel;
+    for (const [id, el] of this.cardEls) el.classList.toggle('sel', !!(sel && sel.type === 'card' && sel.id === id));
+    this.renderArrows(); this.renderSelbar();
+  },
+  renderSelbar() {
+    const bar = this.selbar; if (!bar) return;
+    const sel = UI.sel; bar.replaceChildren();
+    if (!sel) { bar.hidden = true; return; }
+    if (sel.type === 'arrow') {
+      bar.append(h('button', { class: 'btn danger', type: 'button', html: icon('trash', 16) + '<span>Pfeil löschen</span>', onclick: () => this.deleteSelection() }));
+    } else {
+      const card = S.cards.get(sel.id); if (!card) { bar.hidden = true; return; }
+      const it = this.board().items.find(i => i.cardId === sel.id);
+      bar.append(h('button', { class: 'btn', type: 'button', html: icon('open', 16) + '<span>Öffnen</span>', onclick: () => Editor.open(sel.id) }));
+      for (const c of CARD_COLORS) {
+        const b = h('button', { class: 'swatch' + (card.color === c ? ' active' : ''), type: 'button', title: 'Farbe ' + CARD_NAMES[c], 'aria-label': 'Kartenfarbe ' + CARD_NAMES[c],
+          onclick: () => { card.color = c; touch(card); refreshCardEverywhere(card.id); this.renderSelbar(); } });
+        const i = h('i'); i.style.background = `var(--card-${c})`; b.append(i); bar.append(b);
+      }
+      bar.append(h('button', { class: 'btn', type: 'button', html: icon('present', 16) + '<span>Zur Präsentation</span>', onclick: () => addCardsToPresentation([sel.id]) }));
+      if (it && it.h) bar.append(h('button', { class: 'btn', type: 'button', text: 'Höhe automatisch', onclick: () => { it.h = null; touch(this.board()); this.renderCards(); requestAnimationFrame(() => { this.renderArrows(); this.positionSelbar(); }); this.renderSelbar(); } }));
+      bar.append(h('button', { class: 'btn danger', type: 'button', text: 'Vom Board entfernen', onclick: () => this.deleteSelection() }));
+    }
+    bar.hidden = false; this.positionSelbar();
+  },
+  positionSelbar() {
+    const bar = this.selbar, sel = UI.sel; if (!bar || bar.hidden || !sel) return;
+    const v = this.view(); const vr = this.vp.getBoundingClientRect();
+    let x, y, y2;
+    if (sel.type === 'card') { const rc = this.cardRect(sel.id); if (!rc) return; x = v.x + (rc.x + rc.w / 2) * v.z; y = v.y + rc.y * v.z; y2 = v.y + (rc.y + rc.h) * v.z; }
+    else { const b = this.board(); const a = b.arrows.find(a => a.id === sel.id); if (!a) return; const ra = this.cardRect(a.from), rb = this.cardRect(a.to); if (!ra || !rb) return; x = v.x + ((ra.x + ra.w / 2 + rb.x + rb.w / 2) / 2) * v.z; y = v.y + ((ra.y + ra.h / 2 + rb.y + rb.h / 2) / 2) * v.z; y2 = y + 20; }
+    const bw = bar.offsetWidth, bh = bar.offsetHeight;
+    let top = y - bh - 12; if (top < 62) top = Math.min(y2 + 12, vr.height - bh - 8);
+    bar.style.left = clamp(x - bw / 2, 8, Math.max(8, vr.width - bw - 8)) + 'px'; bar.style.top = Math.max(8, top) + 'px';
+  },
+  deleteSelection() {
+    const b = this.board(), sel = UI.sel; if (!b || !sel) return;
+    if (sel.type === 'arrow') b.arrows = b.arrows.filter(a => a.id !== sel.id);
+    else { b.items = b.items.filter(i => i.cardId !== sel.id); b.arrows = b.arrows.filter(a => a.from !== sel.id && a.to !== sel.id); }
+    touch(b); this.select(null); this.renderCards(); this.renderHint(); requestAnimationFrame(() => this.renderArrows()); renderSidebarSoon();
+  },
+  cancelConnect() { if (this.connectFrom) { const el = this.cardEls.get(this.connectFrom); if (el) el.classList.remove('connect-src'); } this.connectFrom = null; },
+
+  // --- Karten hinzufügen ---
+  placeCardOnBoard(cardId, at) {
+    const b = this.board(); if (!b) return;
+    if (b.items.some(i => i.cardId === cardId)) { this.select({ type: 'card', id: cardId }); this.centerOn(cardId); return false; }
+    const [cx, cy] = at || this.viewCenter();
+    b.items.push({ cardId, x: Math.round(cx - 160), y: Math.round(cy - 60), w: 320, h: null });
+    touch(b); this.renderCards(); this.renderHint(); requestAnimationFrame(() => this.renderArrows()); renderSidebarSoon();
+    return true;
+  },
+  addNewCard(at) {
+    const c = newCard(); setEntity(c); touch(c);
+    this.placeCardOnBoard(c.id, at);
+    this.select({ type: 'card', id: c.id });
+    Editor.open(c.id, { focusTitle: true });
+  },
+  async addFromLibrary() {
+    const b = this.board(); const onBoard = new Set(b.items.map(i => i.cardId));
+    const ids = await pickCards({ title: 'Karten auf das Board legen', multi: true, exclude: onBoard, okLabel: 'Auf Board legen' });
+    if (!ids || !ids.length) return;
+    let [cx, cy] = this.viewCenter(); cx -= (ids.length - 1) * 15; cy -= (ids.length - 1) * 15;
+    ids.forEach((id, i) => this.placeCardOnBoard(id, [cx + i * 30, cy + i * 30]));
+  },
+  centerOn(cardId) {
+    const rc = this.cardRect(cardId); if (!rc) return; const v = this.view(); const r = this.vp.getBoundingClientRect();
+    v.x = r.width / 2 - (rc.x + rc.w / 2) * v.z; v.y = r.height / 2 - (rc.y + rc.h / 2) * v.z; this.applyView();
+  },
+  moreMenu(anchor) {
+    const b = this.board();
+    openMenu(anchor, [
+      { label: 'Präsentation aus diesem Board erstellen', onClick: () => {
+        const rows = b.items.map(i => ({ id: i.cardId, x: i.x, y: i.y }));
+        rows.sort((a, c) => (Math.abs(a.y - c.y) < 120 ? a.x - c.x : a.y - c.y));
+        const p = newPres(b.name); p.cardIds = rows.map(r => r.id).filter(id => S.cards.has(id)); setEntity(p); touch(p);
+        navigate({ type: 'pres', id: p.id }); toast(`Präsentation mit ${p.cardIds.length} Karten erstellt`);
+      } },
+      { label: 'Handschrift auf dem Board löschen', onClick: () => { if (!b.ink.length) return; const strokes = b.ink.slice(); b.ink.length = 0; Undo.push({ target: { kind: 'board', id: b.id }, op: 'remove', strokes }); touch(b); this.renderInk(); } },
+      { label: 'Board löschen', danger: true, onClick: async () => {
+        if (!(await confirmDialog(`„${b.name}“ löschen?`, 'Die Karten bleiben in der Bibliothek erhalten.', 'Board löschen'))) return;
+        removeEntityLocal(keyOf(b), stamp()); Persist.mark(keyOf(b));
+        const next = sortedBoards()[0]; navigate(next ? { type: 'board', id: next.id } : { type: 'library' });
+      } }
+    ]);
+  },
+
+  // --- Zeiger-Ereignisse ---
+  bindEvents() {
+    const vp = this.vp;
+    vp.addEventListener('pointerdown', e => this.onDown(e));
+    vp.addEventListener('pointermove', e => this.onMove(e));
+    vp.addEventListener('pointerup', e => this.onUp(e));
+    vp.addEventListener('pointercancel', e => this.onUp(e, true));
+    vp.addEventListener('lostpointercapture', e => { if (this.pointers.has(e.pointerId)) this.onUp(e, true); });
+    vp.addEventListener('wheel', e => this.onWheel(e), { passive: false });
+    vp.addEventListener('contextmenu', e => e.preventDefault());
+    // Safari (Mac-Trackpad): Pinch kommt als gesture-Ereignis
+    vp.addEventListener('gesturestart', e => { e.preventDefault(); if (this.touchCount()) return; this.gestureZoom = { z: this.view().z }; });
+    vp.addEventListener('gesturechange', e => { e.preventDefault(); if (!this.gestureZoom || this.touchCount()) return; this.zoomAt(this.gestureZoom.z * e.scale, e.clientX, e.clientY); });
+    vp.addEventListener('gestureend', e => { e.preventDefault(); this.gestureZoom = null; });
+  },
+  touchCount() { let n = 0; for (const p of this.pointers.values()) if (p.type === 'touch') n++; return n; },
+  onDown(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
+    if (e.target.closest('.selbar')) return;
+    // Handballen ignorieren, solange der Stift zeichnet
+    if (e.pointerType === 'touch' && this.gesture && this.gesture.pointerType === 'pen') return;
+    try { this.vp.setPointerCapture(e.pointerId); } catch (err) {}
+    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+    if (e.pointerType === 'touch' && this.touchCount() >= 2) { this.abortGesture(); this.startPinch(); return; }
+    if (this.gesture) {
+      if (e.pointerType === 'pen' && this.gesture.pointerType === 'touch') this.abortGesture();
+      else return;
+    }
+    const tool = UI.tool, drawTool = tool === 'pen' || tool === 'hl' || tool === 'eraser';
+    if (e.button === 1) { this.startPan(e); return; }
+    if (drawTool) { if (pointerMayDraw(e)) this.startInk(e); else this.startPan(e); return; }
+    const cardEl = e.target.closest('.bcard'); const arrowId = e.target.getAttribute && e.target.getAttribute('data-arrow');
+    if (tool === 'connect') {
+      if (cardEl) this.connectTap(cardEl.dataset.card);
+      else { this.cancelConnect(); this.startPan(e); }
+      return;
+    }
+    if (cardEl && e.target.closest('.bcard-resize')) { this.startResize(e, cardEl.dataset.card); return; }
+    if (cardEl) { this.startCardDrag(e, cardEl.dataset.card); return; }
+    if (arrowId) { this.select({ type: 'arrow', id: arrowId }); this.gesture = { type: 'none', id: e.pointerId, pointerType: e.pointerType }; return; }
+    this.startPan(e, true);
+  },
+  onMove(e) {
+    const p = this.pointers.get(e.pointerId); if (!p) return;
+    p.x = e.clientX; p.y = e.clientY;
+    const g = this.gesture; if (!g) return;
+    if (g.type === 'pinch') { this.updatePinch(); return; }
+    if (g.id !== e.pointerId) return;
+    if (g.type === 'ink') {
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      for (const ev of (evs && evs.length ? evs : [e])) { const [x, y] = this.toWorld(ev.clientX, ev.clientY); g.ink.add(x, y, penPressure(ev)); }
+      return;
+    }
+    const dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+    if (!g.moved && Math.hypot(dx, dy) > 4) g.moved = true;
+    const v = this.view();
+    if (g.type === 'pan') { if (g.moved) { v.x = g.vx + dx; v.y = g.vy + dy; this.vp.classList.add('panning'); this.applyView(); } }
+    else if (g.type === 'drag' && g.moved) {
+      g.it.x = Math.round(g.ox + dx / v.z); g.it.y = Math.round(g.oy + dy / v.z);
+      this.placeCard(g.el, g.it); g.el.classList.add('dragging'); this.renderArrows(); this.positionSelbar();
+    }
+    else if (g.type === 'resize' && g.moved) {
+      g.it.w = Math.round(clamp(g.ow + dx / v.z, 180, 1200)); g.it.h = Math.round(clamp(g.oh + dy / v.z, 90, 4000));
+      this.placeCard(g.el, g.it); g.el.classList.remove('auto'); this.updateClip(g.el); this.renderArrows(); this.positionSelbar();
+    }
+  },
+  onUp(e, cancelled) {
+    const had = this.pointers.delete(e.pointerId);
+    const g = this.gesture; if (!g) return;
+    if (g.type === 'pinch') { if (this.touchCount() < 2) this.gesture = null; return; }
+    if (g.id !== e.pointerId) return;
+    this.gesture = null; this.vp.classList.remove('panning');
+    if (!had && !cancelled) return;
+    if (g.type === 'ink') { if (cancelled) g.ink.cancel(); else { const [x, y] = this.toWorld(e.clientX, e.clientY); g.ink.end(x, y); } return; }
+    if (g.type === 'pan') {
+      if (!g.moved && g.empty && !cancelled) {
+        this.select(null);
+        const t = performance.now(), lt = this.lastTap;
+        if (lt && lt.empty && t - lt.t < 380 && Math.hypot(e.clientX - lt.x, e.clientY - lt.y) < 24) { this.lastTap = null; this.addNewCard(this.toWorld(e.clientX, e.clientY)); }
+        else this.lastTap = { empty: true, t, x: e.clientX, y: e.clientY };
+      }
+      return;
+    }
+    if (g.type === 'drag') {
+      g.el.classList.remove('dragging');
+      if (g.moved) { touch(this.board()); return; }
+      if (cancelled) return;
+      const t = performance.now(), lt = this.lastTap;
+      if (lt && lt.card === g.cardId && t - lt.t < 400) { this.lastTap = null; Editor.open(g.cardId); }
+      else this.lastTap = { card: g.cardId, t };
+      this.select({ type: 'card', id: g.cardId });
+      return;
+    }
+    if (g.type === 'resize') { if (g.moved) { touch(this.board()); requestAnimationFrame(() => this.renderArrows()); } }
+  },
+  abortGesture() {
+    const g = this.gesture; if (!g) return;
+    if (g.type === 'ink') g.ink.cancel();
+    if (g.type === 'drag' && g.moved) { g.it.x = g.ox; g.it.y = g.oy; this.placeCard(g.el, g.it); g.el.classList.remove('dragging'); this.renderArrows(); }
+    this.gesture = null; this.vp.classList.remove('panning');
+  },
+  startPan(e, empty) { const v = this.view(); this.gesture = { type: 'pan', id: e.pointerId, pointerType: e.pointerType, sx: e.clientX, sy: e.clientY, vx: v.x, vy: v.y, moved: false, empty: !!empty }; },
+  startInk(e) {
+    const b = this.board(); const v = this.view();
+    const ink = new InkGesture({ tool: UI.tool, layer: this.liveG, strokes: b.ink, scale: 1 / v.z, target: { kind: 'board', id: b.id },
+      onDone: st => { if (st) { const p = strokeEl(st); st._el = p; this.inkG.append(p); } touch(b); this.renderHint(); } });
+    this.gesture = { type: 'ink', id: e.pointerId, pointerType: e.pointerType, ink };
+    const [x, y] = this.toWorld(e.clientX, e.clientY); ink.add(x, y, penPressure(e));
+  },
+  startCardDrag(e, cardId) {
+    const b = this.board(); const idx = b.items.findIndex(i => i.cardId === cardId); if (idx < 0) return;
+    const it = b.items[idx];
+    if (idx !== b.items.length - 1) { b.items.splice(idx, 1); b.items.push(it); const el = this.cardEls.get(cardId); this.cardsLayer.append(el); }
+    this.gesture = { type: 'drag', id: e.pointerId, pointerType: e.pointerType, cardId, it, el: this.cardEls.get(cardId), sx: e.clientX, sy: e.clientY, ox: it.x, oy: it.y, moved: false };
+  },
+  startResize(e, cardId) {
+    const b = this.board(); const it = b.items.find(i => i.cardId === cardId); const el = this.cardEls.get(cardId);
+    this.gesture = { type: 'resize', id: e.pointerId, pointerType: e.pointerType, cardId, it, el, sx: e.clientX, sy: e.clientY, ow: it.w, oh: it.h || el.offsetHeight, moved: false };
+  },
+  startPinch() {
+    const ts = [...this.pointers.values()].filter(p => p.type === 'touch').slice(0, 2);
+    const v = this.view();
+    this.gesture = { type: 'pinch', d0: Math.hypot(ts[0].x - ts[1].x, ts[0].y - ts[1].y) || 1, m0: [(ts[0].x + ts[1].x) / 2, (ts[0].y + ts[1].y) / 2], v0: { ...v } };
+  },
+  updatePinch() {
+    const g = this.gesture; const ts = [...this.pointers.values()].filter(p => p.type === 'touch').slice(0, 2); if (ts.length < 2) return;
+    const d = Math.hypot(ts[0].x - ts[1].x, ts[0].y - ts[1].y) || 1; const m = [(ts[0].x + ts[1].x) / 2, (ts[0].y + ts[1].y) / 2];
+    const r = this.vp.getBoundingClientRect(); const v = this.view();
+    const z = clamp(g.v0.z * d / g.d0, 0.15, 4);
+    const wx = (g.m0[0] - r.left - g.v0.x) / g.v0.z, wy = (g.m0[1] - r.top - g.v0.y) / g.v0.z;
+    v.z = z; v.x = m[0] - r.left - wx * z; v.y = m[1] - r.top - wy * z; this.applyView();
+  },
+  connectTap(cardId) {
+    if (!this.connectFrom) { this.connectFrom = cardId; const el = this.cardEls.get(cardId); if (el) el.classList.add('connect-src'); toast('Jetzt die Zielkarte antippen'); return; }
+    const from = this.connectFrom; this.cancelConnect();
+    if (from === cardId) return;
+    const b = this.board();
+    if (b.arrows.some(a => (a.from === from && a.to === cardId))) { toast('Diese Verbindung gibt es schon'); return; }
+    b.arrows.push({ id: newId(), from, to: cardId }); touch(b); this.renderArrows();
+  },
+  onWheel(e) {
+    e.preventDefault();
+    const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+    if (e.ctrlKey || e.metaKey) { if (this.gestureZoom) return; this.zoomAt(this.view().z * Math.exp(-e.deltaY * k * 0.01), e.clientX, e.clientY); }
+    else { const v = this.view(); v.x -= e.deltaX * k; v.y -= e.deltaY * k; this.applyView(); }
+  },
+  onKey(e) {
+    const k = e.key.toLowerCase();
+    if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) Undo.redo(); else Undo.undo(); return true; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return false;
+    if (e.key === 'Delete' || e.key === 'Backspace') { if (UI.sel) { e.preventDefault(); this.deleteSelection(); return true; } }
+    if (e.key === 'Escape') { this.cancelConnect(); this.select(null); return true; }
+    if (e.key === 'Enter' && UI.sel && UI.sel.type === 'card') { Editor.open(UI.sel.id); return true; }
+    const map = { v: 'select', p: 'pen', h: 'hl', e: 'eraser', c: 'connect' };
+    if (map[k]) { UI.tool = map[k]; this.cancelConnect(); if (UI.tool !== 'select') this.select(null); this.syncToolClass(); saveUiPrefs(); rerenderPalettes(); return true; }
+    if (k === '+' || k === '=') { this.zoomBy(1.25); return true; }
+    if (k === '-') { this.zoomBy(0.8); return true; }
+    if (k === '0') { this.fit(); return true; }
+    return false;
+  },
+  refreshCard(cardId) {
+    const b = this.board(); if (!b || !b.items.some(i => i.cardId === cardId)) return;
+    this.renderCards(); requestAnimationFrame(() => { this.renderArrows(); this.positionSelbar(); });
+    if (UI.sel && UI.sel.type === 'card' && UI.sel.id === cardId) this.renderSelbar();
+  }
+};
+function clipToRect(c, t, r, gap) {
+  const dx = t[0] - c[0], dy = t[1] - c[1];
+  if (!dx && !dy) return c;
+  const sx = dx ? (r.w / 2) / Math.abs(dx) : Infinity, sy = dy ? (r.h / 2) / Math.abs(dy) : Infinity;
+  const s = Math.min(sx, sy); const len = Math.hypot(dx, dy);
+  return [c[0] + dx * s + (dx / len) * gap, c[1] + dy * s + (dy / len) * gap];
+}
+
+// ---------- Kartenbibliothek ----------
+const LibView = {
+  q: '',
+  mount() {
+    const search = h('input', { class: 'search', type: 'search', id: 'libSearch', placeholder: 'Karten durchsuchen', 'aria-label': 'Karten durchsuchen', value: this.q });
+    search.addEventListener('input', () => { this.q = search.value; this.renderGrid(); });
+    const head = h('header', { class: 'view-head' }, menuButton(),
+      h('div', { class: 'grow' }, h('div', { class: 'title-input', style: 'border:0', text: 'Kartenbibliothek' })),
+      h('div', { class: 'lib-tools' }, search, h('button', { class: 'btn primary', type: 'button', html: icon('plus', 18) + '<span>Karte</span>', onclick: () => { const c = newCard(); setEntity(c); touch(c); this.renderGrid(); Editor.open(c.id, { focusTitle: true }); renderSidebarSoon(); } })));
+    this.grid = h('div', { class: 'lib-grid' });
+    this.area = h('div', { class: 'scroll-area' }, this.grid);
+    $('#main').replaceChildren(h('div', { style: 'display:flex;flex-direction:column;flex:1;min-height:0' }, head, this.area));
+    this.renderGrid();
+  },
+  renderGrid() {
+    if (!this.grid) return;
+    const q = this.q.trim().toLowerCase();
+    let cards = [...S.cards.values()].sort((a, b) => b.v - a.v);
+    if (q) cards = cards.filter(c => (c.title + ' ' + c.blocks.map(b => b.type === 'text' ? htmlToText(b.html) : '').join(' ')).toLowerCase().includes(q));
+    this.grid.replaceChildren();
+    if (!cards.length) { this.grid.append(h('div', { class: 'lib-empty', style: 'grid-column:1/-1', text: q ? 'Keine Karte passt zur Suche.' : 'Noch keine Karten. Lege mit „+ Karte“ die erste an.' })); return; }
+    for (const c of cards) {
+      const boards = boardsWithCard(c.id).length, pres = presWithCard(c.id).length;
+      const meta = h('div', { class: 'lmeta' },
+        boards ? h('span', { class: 'chip', text: boards === 1 ? 'auf 1 Board' : `auf ${boards} Boards` }) : h('span', { class: 'chip lone', text: 'auf keinem Board' }),
+        pres ? h('span', { class: 'chip', text: pres === 1 ? 'in 1 Präsentation' : `in ${pres} Präsentationen` }) : null);
+      const el = h('button', { class: 'lcard ' + colorClass(c.color), type: 'button', 'aria-label': 'Karte öffnen: ' + cardTitle(c), onclick: () => Editor.open(c.id) }, renderCardContent(c), meta);
+      this.grid.append(el);
+    }
+  }
+};
+
+// ---------- Präsentations-Editor ----------
+const PresView = {
+  presId: null, selIdx: 0,
+  pres() { return S.pres.get(this.presId); },
+  mount(id) {
+    this.presId = id; this.selIdx = 0; const p = this.pres();
+    const name = h('input', { class: 'title-input', 'aria-label': 'Name der Präsentation', value: p.name, maxlength: '120' });
+    name.addEventListener('input', () => { const pp = this.pres(); if (!pp) return; pp.name = name.value; touch(pp); renderSidebarSoon(); });
+    const head = h('header', { class: 'view-head' }, menuButton(), h('div', { class: 'grow' }, name),
+      h('button', { class: 'btn primary', type: 'button', html: icon('play', 18) + '<span>Präsentieren</span>', onclick: () => Presenter.start(this.presId, this.selIdx) }),
+      iconBtn('more', 'Weitere Aktionen', ev => openMenu(ev.currentTarget, [
+        { label: 'Präsentation löschen', danger: true, onClick: async () => {
+          const pp = this.pres(); if (!(await confirmDialog(`„${pp.name}“ löschen?`, 'Die Karten bleiben in der Bibliothek erhalten.', 'Präsentation löschen'))) return;
+          removeEntityLocal(keyOf(pp), stamp()); Persist.mark(keyOf(pp)); navigate(sortedBoards()[0] ? { type: 'board', id: sortedBoards()[0].id } : { type: 'library' });
+        } }])));
+    this.list = h('ul', { class: 'slides', 'aria-label': 'Folien' });
+    this.count = h('span');
+    const slidesCol = h('div', { class: 'slides-col' },
+      h('div', { class: 'slides-head' }, this.count, h('span', { text: 'Ziehen zum Umsortieren' })),
+      this.list,
+      h('div', { class: 'slides-foot' }, h('button', { class: 'btn', type: 'button', style: 'width:100%', html: icon('plus', 18) + '<span>Karten hinzufügen</span>', onclick: () => this.addCards() })));
+    this.frame = h('div', { class: 'preview-frame' });
+    this.note = h('div', { class: 'preview-note' });
+    const previewCol = h('div', { class: 'preview-col' }, this.frame, this.note);
+    $('#main').replaceChildren(h('div', { style: 'display:flex;flex-direction:column;flex:1;min-height:0' }, head, h('div', { class: 'pres-body' }, slidesCol, previewCol)));
+    this.bindDrag();
+    this.render();
+  },
+  render() {
+    const p = this.pres(); if (!p || !this.list) return;
+    const ids = p.cardIds.filter(id => S.cards.has(id));
+    this.count.textContent = ids.length === 1 ? '1 Folie' : `${ids.length} Folien`;
+    this.selIdx = clamp(this.selIdx, 0, Math.max(0, ids.length - 1));
+    this.list.replaceChildren();
+    if (!ids.length) this.list.append(h('li', { class: 'empty-note', style: 'padding:16px', text: 'Noch keine Karten. Füge Karten aus der Bibliothek hinzu oder wähle auf einem Board „Zur Präsentation“.' }));
+    ids.forEach((cid, i) => {
+      const c = S.cards.get(cid);
+      const sw = h('span', { class: 'sw' }); sw.style.background = `var(--stripe-${c.color})`;
+      const row = h('li', { class: 'slide-row' + (i === this.selIdx ? ' active' : ''), 'data-idx': String(i), onclick: ev => { if (ev.target.closest('button')) return; this.selIdx = i; this.render(); } },
+        h('span', { class: 'grip', title: 'Ziehen zum Umsortieren', html: icon('grip', 18) }),
+        h('span', { class: 'num', text: String(i + 1) }), sw,
+        h('span', { class: 't', text: cardTitle(c) }),
+        iconBtn('up', 'Nach oben', () => this.move(i, i - 1)), iconBtn('down', 'Nach unten', () => this.move(i, i + 1)),
+        iconBtn('close', 'Aus Präsentation entfernen', () => { const pp = this.pres(); pp.cardIds = ids.filter((_, j) => j !== i); touch(pp); this.render(); }));
+      row.children[4].disabled = i === 0; row.children[5].disabled = i === ids.length - 1;
+      row.addEventListener('dblclick', () => Editor.open(cid));
+      this.list.append(row);
+    });
+    this.renderPreview(ids);
+  },
+  renderPreview(ids) {
+    this.frame.replaceChildren();
+    const c = S.cards.get(ids[this.selIdx]);
+    if (!c) { this.frame.append(h('div', { class: 'p-empty', style: 'font-size:15px', text: 'Vorschau erscheint hier' })); this.note.textContent = ''; return; }
+    const holder = h('div', { class: 'slide-holder' });
+    const slide = h('div', { class: 'slide ' + colorClass(c.color) }, renderCardContent(c, { onImg: () => fitSlide(this.frame, holder, slide, false) }));
+    holder.append(slide); this.frame.append(holder);
+    requestAnimationFrame(() => fitSlide(this.frame, holder, slide, false));
+    this.note.replaceChildren(document.createTextNode(`Folie ${this.selIdx + 1}: Doppelklick öffnet die Karte. `),
+      h('button', { class: 'btn ghost', type: 'button', text: 'Karte bearbeiten', onclick: () => Editor.open(c.id) }));
+  },
+  move(i, j) {
+    const p = this.pres(); const ids = p.cardIds.filter(id => S.cards.has(id)); if (j < 0 || j >= ids.length) return;
+    const [x] = ids.splice(i, 1); ids.splice(j, 0, x); p.cardIds = ids; this.selIdx = j; touch(p); this.render();
+  },
+  async addCards() {
+    const ids = await pickCards({ title: 'Karten zur Präsentation hinzufügen', multi: true, exclude: new Set(this.pres().cardIds), okLabel: 'Hinzufügen' });
+    if (!ids || !ids.length) return; const p = this.pres(); p.cardIds.push(...ids); touch(p); this.selIdx = p.cardIds.length - 1; this.render();
+  },
+  bindDrag() {
+    const list = this.list; let drag = null;
+    list.addEventListener('pointerdown', e => {
+      const grip = e.target.closest('.grip'); if (!grip) return;
+      const row = grip.closest('.slide-row'); e.preventDefault();
+      try { list.setPointerCapture(e.pointerId); } catch (err) {}
+      drag = { id: e.pointerId, row, y0: e.clientY, from: +row.dataset.idx }; row.classList.add('dragging');
+    });
+    list.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const row = drag.row; const prev = row.previousElementSibling, next = row.nextElementSibling;
+      if (prev && e.clientY < prev.getBoundingClientRect().top + prev.offsetHeight / 2) list.insertBefore(row, prev);
+      else if (next && e.clientY > next.getBoundingClientRect().top + next.offsetHeight / 2) list.insertBefore(next, row);
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const p = this.pres(); const ids = p.cardIds.filter(id => S.cards.has(id));
+      const order = $$('.slide-row', list).map(r => ids[+r.dataset.idx]);
+      const newIdx = $$('.slide-row', list).indexOf(drag.row);
+      drag.row.classList.remove('dragging'); drag = null;
+      if (order.join() !== ids.join()) { p.cardIds = order; touch(p); }
+      this.selIdx = newIdx; this.render();
+    };
+    list.addEventListener('pointerup', end); list.addEventListener('pointercancel', end);
+  }
+};
+function fitSlide(stage, holder, slide, allowScroll) {
+  const W = stage.clientWidth, H = stage.clientHeight; if (!W || !H) return;
+  const padX = Math.min(64, W * 0.05), padY = Math.min(56, H * 0.06);
+  const natH = slide.offsetHeight;
+  let s = Math.min((W - padX * 2) / 960, 1.9);
+  let scroll = false;
+  if (natH * s > H - padY * 2) {
+    const s2 = (H - padY * 2) / natH;
+    if (!allowScroll || s2 >= s * 0.62) s = s2; else { scroll = true; s = Math.max(s * 0.62, s2); }
+  }
+  const w = 960 * s, hgt = natH * s;
+  slide.style.transform = `scale(${s})`;
+  holder.style.width = w + 'px'; holder.style.height = hgt + 'px';
+  holder.style.marginTop = scroll ? padY + 'px' : Math.max(padY, (H - hgt) / 2) + 'px';
+  holder.style.marginBottom = scroll ? padY * 2 + 'px' : '0';
+  stage.classList.toggle('scrolly', scroll);
+}
+
+// ---------- Präsentationsmodus ----------
+const Presenter = {
+  presId: null, idx: 0, ids: [], idleTimer: null, swipe: null,
+  start(presId, from = 0) {
+    const p = S.pres.get(presId); if (!p) return;
+    this.presId = presId; this.ids = p.cardIds.filter(id => S.cards.has(id));
+    if (!this.ids.length) { toast('Diese Präsentation hat noch keine Folien.'); return; }
+    this.idx = clamp(from, 0, this.ids.length - 1);
+    const el = $('#present'); el.hidden = false; el.className = 'present ' + UI.presTheme;
+    this.stage = h('div', { class: 'stage' });
+    this.counter = h('span', { class: 'p-count' });
+    this.progress = h('div', { class: 'p-progress' });
+    el.replaceChildren(this.stage, this.progress,
+      h('div', { class: 'p-ui p-top' }, iconBtn('sun', 'Hell oder dunkel', () => { UI.presTheme = UI.presTheme === 'light' ? 'dark' : 'light'; el.className = 'present ' + UI.presTheme; saveUiPrefs(); }), iconBtn('close', 'Präsentation beenden (Esc)', () => this.stop())),
+      h('div', { class: 'p-ui p-bottom' }, iconBtn('left', 'Vorherige Folie', () => this.go(-1)), this.counter, iconBtn('right', 'Nächste Folie', () => this.go(1))));
+    el.onpointerdown = e => { if (e.target.closest('.p-ui')) return; this.swipe = { x: e.clientX, y: e.clientY, t: performance.now() }; this.poke(); };
+    el.onpointerup = e => {
+      if (e.target.closest('.p-ui') || !this.swipe) return;
+      const dx = e.clientX - this.swipe.x, dy = e.clientY - this.swipe.y; this.swipe = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { this.go(dx < 0 ? 1 : -1); return; }
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) this.go(e.clientX < innerWidth * 0.3 ? -1 : 1);
+    };
+    el.onpointermove = e => { if (e.pointerType === 'mouse') this.poke(); };
+    this.onResize = () => this.fit(); addEventListener('resize', this.onResize);
+    try { const fs = el.requestFullscreen || el.webkitRequestFullscreen; if (fs) { const r = fs.call(el); if (r && r.catch) r.catch(() => {}); } } catch (err) {}
+    this.render(); this.poke();
+  },
+  stop() {
+    const el = $('#present'); el.hidden = true; el.replaceChildren(); removeEventListener('resize', this.onResize); this.presId = null;
+    try { const d = document; if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); } catch (err) {}
+  },
+  active() { return !!this.presId; },
+  go(d) { const n = clamp(this.idx + d, 0, this.ids.length - 1); if (n !== this.idx) { this.idx = n; this.render(); } this.poke(); },
+  render() {
+    const c = S.cards.get(this.ids[this.idx]); this.stage.replaceChildren(); this.stage.scrollTop = 0;
+    if (!c) return;
+    this.holder = h('div', { class: 'slide-holder' });
+    this.slide = h('div', { class: 'slide ' + colorClass(c.color) }, renderCardContent(c, { onImg: () => this.fit() }));
+    this.holder.append(this.slide); this.stage.append(this.holder);
+    this.counter.textContent = `${this.idx + 1} / ${this.ids.length}`;
+    this.progress.style.width = ((this.idx + 1) / this.ids.length * 100) + '%';
+    this.fit(); requestAnimationFrame(() => this.fit());
+  },
+  fit() { if (this.slide) fitSlide(this.stage, this.holder, this.slide, true); },
+  poke() { const el = $('#present'); el.classList.remove('idle'); clearTimeout(this.idleTimer); this.idleTimer = setTimeout(() => el.classList.add('idle'), 2600); },
+  onKey(e) {
+    const k = e.key;
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { e.preventDefault(); this.go(1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); this.go(-1); }
+    else if (k === 'Home') { this.idx = 0; this.render(); }
+    else if (k === 'End') { this.idx = this.ids.length - 1; this.render(); }
+    else if (k === 'Escape') this.stop();
+  }
+};
+
+// ---------- Karten-Editor ----------
+const Editor = {
+  cardId: null, activeBlock: null,
+  card() { return S.cards.get(this.cardId); },
+  open(cardId, opts = {}) {
+    if (!S.cards.has(cardId)) return;
+    this.cardId = cardId; this.activeBlock = null;
+    const ed = $('#editor'); ed.hidden = false;
+    this.render();
+    if (opts.focusTitle) setTimeout(() => { const t = $('#edTitle'); if (t) t.focus(); }, 30);
+    if (BV.root) requestAnimationFrame(() => { BV.positionSelbar(); });
+  },
+  close() {
+    if (!this.cardId) return;
+    const c = this.card();
+    this.flushText();
+    this.cardId = null; $('#editor').hidden = true; $('#editor').replaceChildren();
+    if (c) refreshCardEverywhere(c.id);
+    if (BV.root) requestAnimationFrame(() => BV.positionSelbar());
+  },
+  render() {
+    const c = this.card(); const ed = $('#editor'); if (!c) { this.close(); return; }
+    const colors = h('div', { class: 'ed-colors', role: 'group', 'aria-label': 'Kartenfarbe' });
+    for (const col of CARD_COLORS) {
+      const b = h('button', { class: 'swatch' + (c.color === col ? ' active' : ''), type: 'button', title: 'Farbe ' + CARD_NAMES[col], 'aria-label': 'Kartenfarbe ' + CARD_NAMES[col],
+        onclick: () => { c.color = col; touch(c); refreshCardEverywhere(c.id); this.render(); } });
+      const i = h('i'); i.style.background = `var(--card-${col})`; b.append(i); colors.append(b);
+    }
+    const head = h('header', { class: 'ed-head' }, colors, h('span', { class: 'grow' }),
+      h('button', { class: 'btn ghost', type: 'button', html: icon('present', 18) + '<span class="hide-narrow">Zur Präsentation</span>', title: 'Zur Präsentation hinzufügen', 'aria-label': 'Zur Präsentation hinzufügen', onclick: () => addCardsToPresentation([c.id]) }),
+      iconBtn('trash', 'Karte löschen', () => deleteCardEverywhere(c.id)),
+      iconBtn('close', 'Schließen (Esc)', () => this.close()));
+    const fmt = (label, title, cmd, arg) => h('button', { class: 'fmt', type: 'button', title, 'aria-label': title, html: label,
+      onpointerdown: e => e.preventDefault(), onclick: () => this.format(cmd, arg) });
+    this.inkTools = h('div', { style: 'display:contents' });
+    const tools = h('div', { class: 'ed-tools', role: 'toolbar', 'aria-label': 'Format und Stift' },
+      fmt('<b>F</b>', 'Fett', 'bold'), fmt('<i>K</i>', 'Kursiv', 'italic'), fmt('<u>U</u>', 'Unterstrichen', 'underline'), fmt('H', 'Überschrift', 'heading'),
+      fmt(icon('list', 18), 'Aufzählung', 'insertUnorderedList'), fmt(icon('olist', 18), 'Nummerierte Liste', 'insertOrderedList'),
+      h('span', { class: 'tb-sep' }), this.inkTools);
+    const title = h('input', { class: 'ed-title', id: 'edTitle', placeholder: 'Titel', value: c.title, maxlength: '300', 'aria-label': 'Titel der Karte' });
+    title.addEventListener('input', () => { const cc = this.card(); cc.title = title.value; touch(cc); this.changed(); });
+    title.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const first = $('.ed-text', ed); if (first) placeCaretEnd(first); } });
+    this.blocksEl = h('div', { class: 'ed-blocks' });
+    const add = h('div', { class: 'ed-add' },
+      h('button', { class: 'btn', type: 'button', html: icon('text', 18) + '<span>Text</span>', onclick: () => this.addBlock('text') }),
+      h('button', { class: 'btn', type: 'button', html: icon('pen', 18) + '<span>Handschrift</span>', onclick: () => this.addBlock('ink') }),
+      h('button', { class: 'btn', type: 'button', html: icon('image', 18) + '<span>Bild</span>', onclick: () => this.pickImage() }));
+    this.meta = h('div', { class: 'ed-meta' });
+    const scroll = h('div', { class: 'ed-scroll' }, title, this.blocksEl, add, this.meta);
+    ed.replaceChildren(head, tools, scroll);
+    this.renderBlocks(); this.renderMeta(); this.renderInkTools(); refreshUndoButtons();
+  },
+  renderInkTools() { if (this.inkTools && this.cardId) this.inkTools.replaceChildren(inkPalette('editor')); },
+  renderMeta() {
+    const c = this.card(); if (!c || !this.meta) return; this.meta.replaceChildren();
+    const bs = boardsWithCard(c.id), ps = presWithCard(c.id);
+    const row = (label, items, onPick) => h('div', {}, h('div', { text: label }), h('div', { class: 'links' }, items.length ? items.map(x => h('button', { class: 'chip', type: 'button', text: x.name, onclick: () => onPick(x) })) : h('span', { text: '–' })));
+    this.meta.append(row('Liegt auf Boards', bs, b => { navigate({ type: 'board', id: b.id }); requestAnimationFrame(() => { BV.select({ type: 'card', id: c.id }); BV.centerOn(c.id); }); }),
+      row('In Präsentationen', ps, p => navigate({ type: 'pres', id: p.id })));
+    if (UI.view && UI.view.type === 'board' && !bs.some(b => b.id === UI.view.id)) {
+      this.meta.append(h('div', {}, h('button', { class: 'btn', type: 'button', text: 'Auf das aktuelle Board legen', onclick: () => { BV.placeCardOnBoard(c.id); this.renderMeta(); } })));
+    }
+  },
+  renderBlocks() {
+    const c = this.card(); this.blocksEl.replaceChildren();
+    if (!c.blocks.length) this.blocksEl.append(h('div', { class: 'empty-note', text: 'Diese Karte ist leer. Füge unten Text, Handschrift oder ein Bild hinzu.' }));
+    c.blocks.forEach((b, i) => this.blocksEl.append(this.blockEl(b, i, c.blocks.length)));
+  },
+  blockEl(b, i, n) {
+    const wrap = h('div', { class: 'blk', 'data-block': b.id });
+    wrap.addEventListener('focusin', () => this.setActive(b.id));
+    wrap.addEventListener('pointerdown', () => this.setActive(b.id));
+    const ctrl = h('div', { class: 'blk-ctrl' },
+      iconBtn('up', 'Block nach oben', () => this.moveBlock(b.id, -1)), iconBtn('down', 'Block nach unten', () => this.moveBlock(b.id, 1)),
+      iconBtn('trash', 'Block löschen', () => this.removeBlock(b.id)));
+    ctrl.children[0].disabled = i === 0; ctrl.children[1].disabled = i === n - 1;
+    if (b.type === 'text') {
+      const ed = h('div', { class: 'ed-text', contenteditable: 'true', 'data-ph': 'Schreibe hier …', role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Text' });
+      ed.innerHTML = b.html;
+      ed.addEventListener('input', () => { b._dirty = true; if (ed.innerHTML === '<br>') ed.innerHTML = ''; this.textChanged(b, ed); });
+      ed.addEventListener('paste', e => { const t = e.clipboardData && e.clipboardData.getData('text/plain'); if (t != null) { e.preventDefault(); document.execCommand('insertText', false, t); } });
+      ed.addEventListener('blur', () => this.flushText());
+      wrap.append(ed);
+    } else if (b.type === 'ink') {
+      const box = h('div', { class: 'blk-ink', 'aria-label': 'Handschrift-Feld' });
+      const svg = sv('svg', { viewBox: `0 0 ${INK_W} ${b.h}` });
+      const g = sv('g'), live = sv('g'); svg.append(g, live); box.append(svg);
+      for (const st of b.strokes) { const p = strokeEl(st); st._el = p; g.append(p); }
+      const grow = h('div', { class: 'ink-grow', text: 'Ziehen für mehr Platz' });
+      this.bindInk(box, svg, g, live, b);
+      this.bindGrow(grow, svg, b);
+      wrap.append(box, grow);
+    } else if (b.type === 'image') {
+      wrap.append(h('div', { class: 'blk-img' }, h('img', { src: b.src, alt: '', draggable: 'false' })));
+    }
+    wrap.append(ctrl);
+    return wrap;
+  },
+  setActive(id) { this.activeBlock = id; for (const el of $$('.blk', this.blocksEl)) el.classList.toggle('active', el.dataset.block === id); },
+  textChanged: null,
+  flushText() {
+    const c = this.card(); if (!c) return false;
+    let any = false;
+    for (const b of c.blocks) {
+      if (b.type !== 'text' || !b._dirty) continue;
+      const el = $(`.blk[data-block="${b.id}"] .ed-text`, $('#editor')); if (!el) continue;
+      const html = sanitizeHtml(el.innerHTML); b._dirty = false;
+      if (html !== b.html) { b.html = html; any = true; }
+    }
+    if (any) { touch(c); if (this.changed) this.changed(); }
+    return any;
+  },
+  changed: null,
+  format(cmd, arg) {
+    const sel = document.getSelection(); const node = sel && sel.anchorNode;
+    const inText = node && (node.nodeType === 1 ? node : node.parentElement).closest('.ed-text');
+    if (!inText) { toast('Setze zuerst den Cursor in einen Textblock.'); return; }
+    if (cmd === 'heading') {
+      const cur = (document.queryCommandValue('formatBlock') || '').toLowerCase();
+      document.execCommand('formatBlock', false, cur === 'h2' ? '<p>' : '<h2>');
+    } else document.execCommand(cmd, false, arg || null);
+    inText.dispatchEvent(new Event('input'));
+  },
+  addBlock(type, extra) {
+    const c = this.card();
+    const b = type === 'text' ? { id: newId(), type: 'text', html: '' } : type === 'ink' ? { id: newId(), type: 'ink', h: 300, strokes: [] } : Object.assign({ id: newId(), type: 'image' }, extra);
+    const idx = this.activeBlock ? c.blocks.findIndex(x => x.id === this.activeBlock) : -1;
+    c.blocks.splice(idx >= 0 ? idx + 1 : c.blocks.length, 0, b);
+    this.flushText(); touch(c); this.renderBlocks(); this.changed();
+    this.setActive(b.id);
+    const el = $(`.blk[data-block="${b.id}"]`, this.blocksEl);
+    if (el) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); const t = $('.ed-text', el); if (t) t.focus(); }
+    if (type === 'ink' && UI.editorTool === 'eraser') { UI.editorTool = 'pen'; saveUiPrefs(); rerenderPalettes(); }
+  },
+  moveBlock(id, d) {
+    const c = this.card(); const i = c.blocks.findIndex(b => b.id === id); const j = i + d; if (i < 0 || j < 0 || j >= c.blocks.length) return;
+    this.flushText(); const [b] = c.blocks.splice(i, 1); c.blocks.splice(j, 0, b); touch(c); this.renderBlocks(); this.setActive(id); this.changed();
+  },
+  async removeBlock(id) {
+    const c = this.card(); const b = c.blocks.find(x => x.id === id); if (!b) return;
+    const nonEmpty = (b.type === 'text' && !isEmptyHtml(b.html)) || (b.type === 'ink' && b.strokes.length) || b.type === 'image';
+    if (nonEmpty && !(await confirmDialog('Block löschen?', b.type === 'ink' ? 'Die Handschrift in diesem Block geht verloren.' : b.type === 'image' ? 'Das Bild wird aus der Karte entfernt.' : 'Der Text in diesem Block geht verloren.', 'Löschen'))) return;
+    this.flushText(); c.blocks = c.blocks.filter(x => x.id !== id); touch(c); this.renderBlocks(); this.changed();
+  },
+  pickImage() {
+    const inp = $('#imageFile'); inp.value = '';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      try { const img = await loadImageFile(f); this.addBlock('image', img); }
+      catch (e) { toast('Das Bild konnte nicht gelesen werden. Versuche JPEG oder PNG.'); }
+    };
+    inp.click();
+  },
+  bindInk(box, svg, g, live, block) {
+    let gest = null, pid = null;
+    const local = e => { const r = svg.getBoundingClientRect(); const k = INK_W / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k, k]; };
+    // Stift soll nicht scrollen, Finger schon (außer „Mit Finger zeichnen“)
+    box.addEventListener('touchstart', e => { const t = e.touches[0]; if (UI.fingerDraw || (t && t.touchType === 'stylus')) e.preventDefault(); }, { passive: false });
+    box.addEventListener('touchmove', e => { if (gest) e.preventDefault(); }, { passive: false });
+    box.addEventListener('pointerdown', e => {
+      if (gest || !pointerMayDraw(e) || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      e.preventDefault();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      try { box.setPointerCapture(e.pointerId); } catch (err) {}
+      const [x, y, k] = local(e);
+      gest = new InkGesture({ tool: UI.editorTool, layer: live, strokes: block.strokes, scale: k, target: { kind: 'block', cardId: this.cardId, blockId: block.id },
+        onDone: st => {
+          if (st) { const p = strokeEl(st); st._el = p; g.append(p); if (st.bb[3] > block.h - 70) { block.h = Math.min(6000, block.h + 220); svg.setAttribute('viewBox', `0 0 ${INK_W} ${block.h}`); } }
+          const c = S.cards.get(this.cardId); if (c) { touch(c); this.changed(); }
+        } });
+      pid = e.pointerId; gest.add(x, y, penPressure(e));
+    });
+    box.addEventListener('pointermove', e => {
+      if (!gest || e.pointerId !== pid) return;
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      for (const ev of (evs && evs.length ? evs : [e])) { const [x, y] = local(ev); gest.add(x, y, penPressure(ev)); }
+    });
+    const end = (e, cancel) => { if (!gest || e.pointerId !== pid) return; const gg = gest; gest = null; if (cancel) gg.cancel(); else { const [x, y] = local(e); gg.end(x, y); } };
+    box.addEventListener('pointerup', e => end(e, false));
+    box.addEventListener('pointercancel', e => end(e, true));
+  },
+  bindGrow(grow, svg, block) {
+    let st = null;
+    grow.addEventListener('pointerdown', e => { e.preventDefault(); try { grow.setPointerCapture(e.pointerId); } catch (err) {} st = { y: e.clientY, h: block.h, k: INK_W / svg.getBoundingClientRect().width }; });
+    grow.addEventListener('pointermove', e => { if (!st) return; block.h = Math.round(clamp(st.h + (e.clientY - st.y) * st.k, 80, 6000)); svg.setAttribute('viewBox', `0 0 ${INK_W} ${block.h}`); });
+    const end = () => { if (!st) return; st = null; const c = this.card(); if (c) { touch(c); this.changed(); } };
+    grow.addEventListener('pointerup', end); grow.addEventListener('pointercancel', end);
+  },
+  rerenderInk(cardId, blockId) {
+    if (this.cardId !== cardId) return;
+    const c = this.card(); const b = c && c.blocks.find(x => x.id === blockId); const el = $(`.blk[data-block="${blockId}"] svg g`, this.blocksEl);
+    if (!b || !el) return; el.replaceChildren(); for (const st of b.strokes) { const p = strokeEl(st); st._el = p; el.append(p); }
+  },
+  onRemoteChange() {
+    if (!this.cardId) return;
+    if (!S.cards.has(this.cardId)) { this.close(); toast('Diese Karte wurde auf einem anderen Gerät gelöscht.'); return; }
+    const ae = document.activeElement; if (ae && $('#editor').contains(ae) && (ae.isContentEditable || ae.tagName === 'INPUT')) { this.stale = true; return; }
+    this.render();
+  }
+};
+Editor.textChanged = debounce((b, el) => { const c = Editor.card(); if (!c || !c.blocks.includes(b)) return; b.html = sanitizeHtml(el.innerHTML); b._dirty = false; touch(c); Editor.changed(); }, 350);
+Editor.changed = debounce(() => { if (Editor.cardId) refreshCardEverywhere(Editor.cardId, true); }, 250);
+function placeCaretEnd(el) { el.focus(); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+async function loadImageFile(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const max = 1400; const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * s)), hh = Math.max(1, Math.round(img.naturalHeight * s));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = hh;
+    const ctx = cv.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, hh); ctx.drawImage(img, 0, 0, w, hh);
+    return { src: cv.toDataURL('image/jpeg', 0.82), w, h: hh };
+  } finally { URL.revokeObjectURL(url); }
+}
+
+// ---------- Karten löschen / Präsentation hinzufügen ----------
+async function deleteCardEverywhere(cardId) {
+  const c = S.cards.get(cardId); if (!c) return;
+  const nb = boardsWithCard(cardId).length, np = presWithCard(cardId).length;
+  const where = [nb ? (nb === 1 ? '1 Board' : nb + ' Boards') : '', np ? (np === 1 ? '1 Präsentation' : np + ' Präsentationen') : ''].filter(Boolean).join(' und ');
+  if (!(await confirmDialog(`„${cardTitle(c)}“ löschen?`, where ? `Die Karte verschwindet auch von ${where}.` : 'Die Karte wird endgültig gelöscht.', 'Karte löschen'))) return;
+  for (const b of S.boards.values()) {
+    if (b.items.some(i => i.cardId === cardId) || b.arrows.some(a => a.from === cardId || a.to === cardId)) {
+      b.items = b.items.filter(i => i.cardId !== cardId); b.arrows = b.arrows.filter(a => a.from !== cardId && a.to !== cardId); touch(b);
+    }
+  }
+  for (const p of S.pres.values()) if (p.cardIds.includes(cardId)) { p.cardIds = p.cardIds.filter(id => id !== cardId); touch(p); }
+  removeEntityLocal('c_' + cardId, stamp()); Persist.mark('c_' + cardId);
+  if (Editor.cardId === cardId) Editor.close();
+  if (UI.sel && UI.sel.id === cardId) UI.sel = null;
+  onDataChanged(null);
+}
+async function addCardsToPresentation(cardIds) {
+  const list = sortedPres();
+  const choice = await chooseDialog('Zu welcher Präsentation?', [...list.map(p => ({ value: p.id, label: p.name, sub: `${p.cardIds.length} Folien` })), { value: '__new', label: '+ Neue Präsentation', sub: '' }]);
+  if (!choice) return;
+  let p;
+  if (choice === '__new') { p = newPres(); setEntity(p); } else p = S.pres.get(choice);
+  if (!p) return;
+  const add = cardIds.filter(id => !p.cardIds.includes(id));
+  p.cardIds.push(...add); touch(p); renderSidebarSoon();
+  if (Editor.cardId) Editor.renderMeta();
+  if (PresView.presId === p.id && UI.view.type === 'pres') PresView.render();
+  toast(add.length ? `Zu „${p.name}“ hinzugefügt (Folie ${p.cardIds.length})` : `Ist schon in „${p.name}“`);
+}
+
+// ---------- Dialoge und Menüs ----------
+function modal(build) {
+  return new Promise(resolve => {
+    const root = $('#modalRoot'); const prevFocus = document.activeElement;
+    const done = v => { root.replaceChildren(); document.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) try { prevFocus.focus({ preventScroll: true }); } catch (e) {} resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(null); } };
+    const box = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true' });
+    const back = h('div', { class: 'backdrop', onpointerdown: e => { if (e.target === back) done(null); } }, box);
+    build(box, done);
+    root.replaceChildren(back); document.addEventListener('keydown', onKey, true);
+    const f = box.querySelector('[data-autofocus]') || box.querySelector('input,button'); if (f) setTimeout(() => f.focus(), 20);
+  });
+}
+function confirmDialog(title, text, okLabel) {
+  return modal((box, done) => {
+    box.append(h('h2', { text: title }), h('p', { text }),
+      h('div', { class: 'm-foot' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: () => done(false) }),
+        h('button', { class: 'btn primary', type: 'button', 'data-autofocus': true, style: 'background:var(--danger);border-color:var(--danger)', text: okLabel, onclick: () => done(true) })));
+  }).then(v => !!v);
+}
+function chooseDialog(title, options) {
+  return modal((box, done) => {
+    const body = h('div', { class: 'm-body' });
+    for (const o of options) body.append(h('button', { class: 'pick-row', type: 'button', onclick: () => done(o.value) }, h('span', { class: 'tt' }, h('b', { text: o.label }), o.sub ? h('small', { text: o.sub }) : null)));
+    box.append(h('h2', { text: title }), body, h('div', { class: 'm-foot' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: () => done(null) })));
+  });
+}
+function pickCards({ title, multi, exclude, okLabel }) {
+  return modal((box, done) => {
+    const chosen = new Set();
+    const search = h('input', { class: 'search', type: 'search', placeholder: 'Suchen', 'aria-label': 'Karten suchen', 'data-autofocus': true });
+    const body = h('div', { class: 'm-body' });
+    const ok = h('button', { class: 'btn primary', type: 'button', text: okLabel, disabled: true, onclick: () => done([...chosen]) });
+    const render = () => {
+      const q = search.value.trim().toLowerCase();
+      const cards = [...S.cards.values()].filter(c => !exclude || !exclude.has(c.id)).sort((a, b) => b.v - a.v)
+        .filter(c => !q || (c.title + ' ' + cardSnippet(c)).toLowerCase().includes(q));
+      body.replaceChildren();
+      if (!cards.length) body.append(h('div', { class: 'empty-note', style: 'padding:16px', text: q ? 'Keine passende Karte.' : 'Keine weiteren Karten in der Bibliothek.' }));
+      for (const c of cards) {
+        const sw = h('span', { class: 'sw' }); sw.style.background = `var(--stripe-${c.color})`;
+        const row = h('button', { class: 'pick-row' + (chosen.has(c.id) ? ' on' : ''), type: 'button', 'aria-pressed': chosen.has(c.id) ? 'true' : 'false',
+          onclick: () => { if (!multi) { done([c.id]); return; } if (chosen.has(c.id)) chosen.delete(c.id); else chosen.add(c.id); ok.disabled = !chosen.size; ok.textContent = chosen.size ? `${okLabel} (${chosen.size})` : okLabel; render(); } },
+          sw, h('span', { class: 'tt' }, h('b', { text: cardTitle(c) }), h('small', { text: cardSnippet(c) })), multi ? h('span', { class: 'box', html: chosen.has(c.id) ? icon('check', 14) : '' }) : null);
+        body.append(row);
+      }
+    };
+    search.addEventListener('input', render);
+    box.append(h('h2', { text: title }), search, body, h('div', { class: 'm-foot' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: () => done(null) }), multi ? ok : null));
+    render();
+  });
+}
+function openMenu(anchor, items) {
+  const root = $('#modalRoot');
+  const close = () => { root.replaceChildren(); document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', esc, true); };
+  const outside = e => { if (!menu.contains(e.target)) close(); };
+  const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  const menu = h('div', { class: 'menu', role: 'menu' });
+  for (const it of items) menu.append(h('button', { type: 'button', role: 'menuitem', class: it.danger ? 'danger' : '', text: it.label, onclick: () => { close(); it.onClick(); } }));
+  root.replaceChildren(menu);
+  const r = anchor.getBoundingClientRect(); const mw = menu.offsetWidth;
+  menu.style.top = (r.bottom + 6) + 'px'; menu.style.left = clamp(r.right - mw, 8, innerWidth - mw - 8) + 'px';
+  setTimeout(() => { document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', esc, true); const f = menu.querySelector('button'); if (f) f.focus(); }, 0);
+}
+
+// ---------- Seitenleiste & Navigation ----------
+function menuButton() { return iconBtn('menu', 'Seitenleiste öffnen', () => toggleSidebar(true), 'only-narrow'); }
+function toggleSidebar(open) { $('#sidebar').classList.toggle('open', open); $('#scrim').classList.toggle('open', open); }
+function renderSidebar() {
+  const bl = $('#boardList'), pl = $('#presList');
+  const v = UI.view || {};
+  bl.replaceChildren(); pl.replaceChildren();
+  const boards = sortedBoards(), pres = sortedPres();
+  if (!boards.length) bl.append(h('div', { class: 'empty-note', text: 'Noch kein Board' }));
+  for (const b of boards) bl.append(h('button', { class: 'nav-item' + (v.type === 'board' && v.id === b.id ? ' active' : ''), type: 'button', onclick: () => navigate({ type: 'board', id: b.id }), html: icon('board', 18) },
+    h('span', { class: 'lbl', text: b.name || 'Ohne Namen' }), h('span', { class: 'count', text: String(b.items.length) })));
+  if (!pres.length) pl.append(h('div', { class: 'empty-note', text: 'Noch keine Präsentation' }));
+  for (const p of pres) pl.append(h('button', { class: 'nav-item' + (v.type === 'pres' && v.id === p.id ? ' active' : ''), type: 'button', onclick: () => navigate({ type: 'pres', id: p.id }), html: icon('present', 18) },
+    h('span', { class: 'lbl', text: p.name || 'Ohne Namen' }), h('span', { class: 'count', text: String(p.cardIds.filter(id => S.cards.has(id)).length) })));
+  $('#navLibrary').classList.toggle('active', v.type === 'library');
+  $('#cardCount').textContent = String(S.cards.size);
+}
+const renderSidebarSoon = debounce(renderSidebar, 120);
+function navigate(view) {
+  if (!resolveView(view)) view = sortedBoards()[0] ? { type: 'board', id: sortedBoards()[0].id } : { type: 'library' };
+  UI.view = view; UI.sel = null; saveUiPrefs(); toggleSidebar(false);
+  if (view.type !== 'board') BV.unmount();
+  if (view.type !== 'pres') PresView.presId = null;
+  if (view.type !== 'library') LibView.grid = null;
+  if (view.type === 'board') BV.mount(view.id);
+  else if (view.type === 'pres') PresView.mount(view.id);
+  else LibView.mount();
+  renderSidebar();
+  if (Editor.cardId) Editor.renderMeta();
+}
+function refreshCardEverywhere(cardId, light) {
+  if (UI.view && UI.view.type === 'board' && BV.root) BV.refreshCard(cardId);
+  if (UI.view && UI.view.type === 'library' && LibView.grid) { if (!light) LibView.renderGrid(); else refreshLibSoon(); }
+  if (UI.view && UI.view.type === 'pres' && PresView.presId) refreshPresSoon();
+  renderSidebarSoon();
+}
+const refreshLibSoon = debounce(() => LibView.grid && LibView.renderGrid(), 600);
+const refreshPresSoon = debounce(() => PresView.presId && PresView.render(), 400);
+function onDataChanged(changed) {
+  // Ansicht nach (entfernten) Änderungen aktualisieren
+  if (!UI.view || !resolveView(UI.view)) { navigate(UI.view); return; }
+  if ($('#main .loading')) { navigate(UI.view); return; }
+  const v = UI.view;
+  if (v.type === 'board' && BV.root) {
+    if (!changed || changed.has('b_' + v.id) || [...changed].some(k => k.startsWith('c_'))) {
+      BV.renderCards(); BV.renderInk(); requestAnimationFrame(() => { BV.renderArrows(); BV.positionSelbar(); });
+      const n = $('#boardName'); const b = BV.board(); if (n && b && document.activeElement !== n) n.value = b.name;
+    }
+  } else if (v.type === 'pres' && PresView.presId) PresView.render();
+  else if (v.type === 'library') LibView.renderGrid();
+  renderSidebar();
+  if (Editor.cardId && (!changed || changed.has('c_' + Editor.cardId))) Editor.onRemoteChange();
+  else if (Editor.cardId) Editor.renderMeta();
+  if (Presenter.active() && changed) Presenter.render();
+}
+
+// ---------- Export / Import ----------
+async function exportData() {
+  Editor.flushText();
+  const data = { app: 'kartentisch', version: 1, exported: new Date().toISOString(),
+    cards: [...S.cards.values()].map(ser), boards: [...S.boards.values()].map(ser), presentations: [...S.pres.values()].map(ser) };
+  const json = JSON.stringify(data);
+  const filename = `kartentisch-${new Date().toISOString().slice(0, 10)}.json`;
+  let dl = null;
+  try { if (window.claude && window.claude.use) dl = await window.claude.use('downloads'); } catch (e) {}
+  if (dl) {
+    try { await dl.save({ filename, data: json }); toast('Sicherung gespeichert'); return; }
+    catch (e) { if (e && (e.code === 'cancelled' || e.code === 'declined' || e.code === 'denied')) return; }
+  }
+  // Ersatzweg außerhalb von claude.ai: normaler Download
+  try {
+    const a = h('a', { href: URL.createObjectURL(new Blob([json], { type: 'application/json' })), download: filename });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) { toast('Export ist in dieser Ansicht nicht möglich.'); }
+}
+function importData(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    let o; try { o = JSON.parse(fr.result); } catch (e) { toast('Diese Datei ist keine Kartentisch-Sicherung.'); return; }
+    if (!o || o.app !== 'kartentisch') { toast('Diese Datei ist keine Kartentisch-Sicherung.'); return; }
+    let n = 0;
+    for (const raw of [...(o.cards || []), ...(o.boards || []), ...(o.presentations || [])]) {
+      const e = deser(raw); if (!e) continue;
+      const k = keyOf(e); if (e.v <= localV(k) && entityByKey(k)) continue;
+      e.v = Math.max(e.v, localV(k) + 1); setEntity(e); Persist.mark(k); n++;
+    }
+    toast(n ? `${n} Einträge importiert` : 'Nichts Neues in dieser Datei'); onDataChanged(null);
+  };
+  fr.readAsText(file);
+}
+
+// ---------- Tastatur ----------
+document.addEventListener('keydown', e => {
+  if ($('#modalRoot').firstChild) return;
+  if (Presenter.active()) { Presenter.onKey(e); return; }
+  const ae = document.activeElement; const typing = ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA');
+  if (e.key === 'Escape' && Editor.cardId) { if (typing) ae.blur(); Editor.close(); e.preventDefault(); return; }
+  if (typing) return;
+  if (Editor.cardId && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) Undo.redo(); else Undo.undo(); return; }
+  if (UI.view && UI.view.type === 'board' && BV.root) BV.onKey(e);
+});
+
+// ---------- Start ----------
+function buildShell() {
+  $('#sbClose').innerHTML = icon('close');
+  $('#sbClose').addEventListener('click', () => toggleSidebar(false));
+  $('#scrim').addEventListener('click', () => toggleSidebar(false));
+  $('#libIcon').innerHTML = icon('cards', 18);
+  $('#newBoard').innerHTML = icon('plus', 16);
+  $('#newPres').innerHTML = icon('plus', 16);
+  $('#navLibrary').addEventListener('click', () => navigate({ type: 'library' }));
+  $('#newBoard').addEventListener('click', () => { const b = newBoard('Neues Board ' + (S.boards.size + 1)); setEntity(b); touch(b); navigate({ type: 'board', id: b.id }); setTimeout(() => { const n = $('#boardName'); if (n) { n.focus(); n.select(); } }, 50); });
+  $('#newPres').addEventListener('click', () => { const p = newPres('Neue Präsentation ' + (S.pres.size + 1)); setEntity(p); touch(p); navigate({ type: 'pres', id: p.id }); });
+  const fd = $('#fingerDraw'); fd.checked = UI.fingerDraw;
+  document.body.classList.toggle('finger-draw', UI.fingerDraw);
+  fd.addEventListener('change', () => { UI.fingerDraw = fd.checked; document.body.classList.toggle('finger-draw', UI.fingerDraw); saveUiPrefs(); toast(UI.fingerDraw ? 'Der Finger zeichnet jetzt. Mit zwei Fingern verschieben und zoomen.' : 'Nur der Apple Pencil zeichnet. Der Finger verschiebt.'); });
+  $('#exportBtn').addEventListener('click', exportData);
+  $('#importBtn').addEventListener('click', () => { const f = $('#importFile'); f.value = ''; f.click(); });
+  $('#importFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importData(f); });
+  addEventListener('resize', debounce(() => { if (BV.root) { BV.positionSelbar(); } if (PresView.presId && UI.view.type === 'pres') PresView.render(); }, 150));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { Editor.flushText(); Persist.flush(); } });
+  addEventListener('pagehide', () => { Editor.flushText(); Persist.flush(); });
+  document.addEventListener('focusout', () => { if (Editor.stale && !$('#editor').contains(document.activeElement)) { Editor.stale = false; setTimeout(() => { if (Editor.cardId) Editor.render(); }, 0); } });
+}
+async function boot() {
+  loadUiPrefs(); buildShell(); updateSync();
+  await LocalCache.open();
+  const recs = await LocalCache.loadAll();
+  for (const r of recs) applyRecord(r);
+  if (!isEmptyStore()) navigate(UI.view);
+  renderSidebar();
+  connectCloud();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (BV.root) BV.arrowsSoon(); });
+}
+boot();
+</script>
+</body>
+</html>

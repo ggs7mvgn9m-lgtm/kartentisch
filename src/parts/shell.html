@@ -1,0 +1,33 @@
+<div id="app" class="app">
+  <aside id="sidebar" class="sidebar" aria-label="Navigation">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="7" width="15" height="17" rx="3" fill="var(--accent-weak)" stroke="var(--accent)" stroke-width="1.6"/><rect x="11" y="3" width="15" height="17" rx="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.6"/><path d="M14.5 13.5c2-2.6 3.3 1.3 5.2-.8 1-1.1 1.6-1.9 2.6-1.4" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="grow">Kartentisch</span>
+      <button id="sbCollapse" class="icon-btn" type="button" aria-label="Seitenleiste einklappen" title="Seitenleiste einklappen"></button>
+    </div>
+    <div class="sb-top">
+      <button id="navSearch" class="nav-item" type="button"><span id="searchIcon" class="tile t-search"></span><span class="lbl">Suchen</span><span class="count kbd">⌘K</span></button>
+      <button id="navLibrary" class="nav-item" type="button"><span id="libIcon" class="tile t-lib"></span><span class="lbl">Kartenbibliothek</span><span id="cardCount" class="count"></span></button>
+    </div>
+    <div class="sb-scroll">
+      <div class="nav-head"><span>Whiteboards</span><span class="nh-actions"><button id="newFolder" class="mini-btn" type="button" aria-label="Neuer Ordner" title="Neuer Ordner"></button><button id="newBoard" class="mini-btn" type="button" aria-label="Neues Whiteboard" title="Neues Whiteboard"></button></span></div>
+      <div id="boardTree"></div>
+      <div class="nav-head"><span>Präsentationen</span><span class="nh-actions"><button id="newPres" class="mini-btn" type="button" aria-label="Neue Präsentation" title="Neue Präsentation"></button></span></div>
+      <div id="presList"></div>
+    </div>
+    <div class="sb-foot">
+      <label class="toggle" for="fingerDraw"><span>Mit Finger zeichnen</span><span class="switch"><input type="checkbox" id="fingerDraw"><span></span></span></label>
+      <div class="foot-row">
+        <button id="exportBtn" class="btn" type="button">Exportieren</button>
+        <button id="importBtn" class="btn" type="button">Importieren</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div id="sync" class="sync" role="status"><span class="dot"></span><span id="syncText">Verbinde …</span></div>
+      <div id="account" class="account" hidden></div>
+    </div>
+  </aside>
+  <div id="scrim" class="scrim"></div>
+  <main id="main" class="main"><div class="loading">Lade deine Karten …</div></main>
+  <section id="editor" class="editor" hidden aria-label="Karte bearbeiten"></section>
+  <div id="auth" class="auth" hidden></div>
+</div>
