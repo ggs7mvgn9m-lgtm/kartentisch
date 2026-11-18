@@ -175,6 +175,13 @@ class BlockEditor {
     const ctrl = h('div', { class: 'blk-ctrl' },
       iconBtn('up', 'Baustein nach oben', () => this.move(b.id, -1)), iconBtn('down', 'Baustein nach unten', () => this.move(b.id, 1)));
     if (b.type === 'link' || b.type === 'embed') ctrl.append(iconBtn('pen', 'Titel ändern', () => this.editLink(b.id)));
+    if (b.type === 'ink') { const pb = iconBtn('paper', 'Hintergrund und Papier', () => {
+      const setIt = (k, v) => this.mutate(c => { const x = c.blocks.find(y => y.id === b.id); if (x) { if (v) x[k] = v; else delete x[k]; } }, null, true);
+      const cb = b.bg || 'lines', cp = b.paper || '';
+      openMenu(pb, [...INK_BGS.map(([v, n]) => ({ label: (cb === v ? '✓ ' : '\u2003') + n, onClick: () => setIt('bg', v) })),
+        { label: (cp === '' ? '✓ ' : '\u2003') + 'Papier: Standard', onClick: () => setIt('paper', '') },
+        ...INK_PAPERS.map(([v, n]) => ({ label: (cp === v ? '✓ ' : '\u2003') + 'Papier: ' + n, onClick: () => setIt('paper', v) }))]);
+    }); ctrl.append(pb); }
     ctrl.append(iconBtn('trash', 'Baustein löschen', () => this.remove(b.id)));
     ctrl.children[0].disabled = i === 0; ctrl.children[1].disabled = i === n - 1;
     const inline = this.opts.inline;
@@ -202,7 +209,7 @@ class BlockEditor {
       }
       case 'divider': wrap.append(h('hr', { class: 'cc-hr' })); break;
       case 'ink': {
-        const box = h('div', { class: 'blk-ink', 'aria-label': 'Handschrift-Feld' });
+        const box = h('div', { class: 'blk-ink ' + inkBgClass(b), 'aria-label': 'Handschrift-Feld' });
         const svg = sv('svg', { viewBox: `0 0 ${INK_W} ${b.h}` }); const g = sv('g'), live = sv('g'); svg.append(g, live); box.append(svg);
         for (const st of b.strokes) { const p = strokeEl(st); st._el = p; g.append(p); }
         const grow = h('div', { class: 'ink-grow', text: 'Ziehen für mehr Platz' });

@@ -227,7 +227,7 @@ function renderCardContent(card, opts = {}) {
   if (t || !hasContent) wrap.append(h('div', { class: 'cc-title' + (t ? '' : ' empty'), text: t || 'Ohne Titel' }));
   for (const b of card.blocks) {
     if (b.type === 'text') { if (!isEmptyHtml(b.html)) wrap.append(richDiv(b.html, 'cc-text')); }
-    else if (b.type === 'ink') { if (b.strokes.length) wrap.append(inkSvg(b, true)); }
+    else if (b.type === 'ink') { if (b.strokes.length) { const s = inkSvg(b, true); wrap.append(b.bg || b.paper ? h('div', { class: 'cc-inkbg ' + inkBgClass(b) }, s) : s); } }
     else if (b.type === 'image') { const img = h('img', { class: 'cc-img', alt: '', draggable: 'false' }); Files.bind(img, 'src', b); if (opts.onImg) img.addEventListener('load', opts.onImg); wrap.append(img); }
     else if (b.type === 'divider') wrap.append(h('hr', { class: 'cc-hr' }));
     else if (b.type === 'todo') {

@@ -1,8 +1,11 @@
+const INK_BGS = [['none', 'Leer'], ['lines', 'Liniert'], ['wide', 'Liniert, weit'], ['grid', 'Kariert'], ['dots', 'Punkte']];
+const INK_PAPERS = [['white', 'Weiß'], ['cream', 'Creme'], ['gray', 'Grau']];
+const inkBgClass = b => 'ibg-' + (b.bg || 'std') + ' ipaper-' + (b.paper || 'std');
 // ---------- Bausteine speichern/laden ----------
 const BLOCK_FIELDS = { text: ['html'], image: ['src', 'url', 'ref', 'asset', 'sb', 'local', 'w', 'h', 'name'], file: ['asset', 'sb', 'local', 'name', 'size', 'mime'], video: ['asset', 'sb', 'local', 'name', 'size', 'mime'], audio: ['asset', 'sb', 'local', 'name', 'size', 'mime'],
   divider: [], todo: ['items'], toggle: ['title', 'html', 'open'], link: ['url', 'title'], embed: ['url', 'provider', 'vid', 'title'] };
 function serBlock(b) {
-  if (b.type === 'ink') return { id: b.id, type: 'ink', h: Math.round(b.h), strokes: b.strokes.map(encStroke) };
+  if (b.type === 'ink') { const o = { id: b.id, type: 'ink', h: Math.round(b.h), strokes: b.strokes.map(encStroke) }; if (b.bg) o.bg = b.bg; if (b.paper) o.paper = b.paper; return o; }
   const o = { id: b.id, type: b.type };
   for (const f of BLOCK_FIELDS[b.type] || []) { if (b[f] == null) continue; o[f] = f === 'items' ? b.items.map(i => ({ id: i.id, html: i.html, done: !!i.done })) : b[f]; }
   return o;
@@ -14,7 +17,7 @@ function deserBlock(b) {
   const id = isId(b.id) ? b.id : newId();
   const media = () => { const o = { id, type: b.type, name: str(b.name, 200), size: num(b.size, 0), mime: str(b.mime, 100) }; if (isAssetId(b.asset)) o.asset = b.asset; else if (isSbPath(b.sb)) o.sb = b.sb; else if (isId(b.local)) o.local = b.local; else return null; return o; };
   switch (b.type) {
-    case 'ink': return { id, type: 'ink', h: clamp(num(b.h, 300), 80, 6000), strokes: (Array.isArray(b.strokes) ? b.strokes : []).map(decStroke).filter(Boolean) };
+    case 'ink': { const o = { id, type: 'ink', h: clamp(num(b.h, 300), 80, 6000), strokes: (Array.isArray(b.strokes) ? b.strokes : []).map(decStroke).filter(Boolean) }; if (INK_BGS.some(x => x[0] === b.bg)) o.bg = b.bg; if (INK_PAPERS.some(x => x[0] === b.paper)) o.paper = b.paper; return o; }
     case 'image': {
       const o = { id, type: 'image', w: num(b.w, 0), h: num(b.h, 0), name: str(b.name, 200) };
       if (isAssetId(b.asset)) o.asset = b.asset;
@@ -75,8 +78,9 @@ function inkTarget(t) {
 }
 function applyInkOp(e, inverse) {
   const tg = inkTarget(e.target); if (!tg) return;
-  const add = (e.op === 'add') !== inverse;
-  for (const st of e.strokes) { const i = tg.arr.indexOf(st); if (add && i < 0) tg.arr.push(st); if (!add && i >= 0) tg.arr.splice(i, 1); }
+  const put = (list, add) => { for (const st of list) { const i = tg.arr.indexOf(st); if (add && i < 0) tg.arr.push(st); if (!add && i >= 0) tg.arr.splice(i, 1); } };
+  if (e.op === 'swap') { put(e.removed, inverse); put(e.added, !inverse); }
+  else put(e.strokes, (e.op === 'add') !== inverse);
   touch(tg.ent);
   if (e.target.kind === 'board') { if (BV.boardId === e.target.id) BV.renderInk(); }
   else { Editor.rerenderInk(e.target.cardId, e.target.blockId); refreshCardEverywhere(e.target.cardId); }

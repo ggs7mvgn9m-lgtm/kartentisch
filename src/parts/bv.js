@@ -146,8 +146,8 @@ const BV = {
   },
   renderFlyout() {
     const t = UI.tool, fl = this.flyout; if (!fl) return;
-    if (t !== 'pen' && t !== 'hl') { fl.hidden = true; return; }
-    fl.replaceChildren(inkStyleControls(t === 'hl', () => this.renderFlyout()));
+    if (t !== 'pen' && t !== 'hl' && t !== 'eraser') { fl.hidden = true; return; }
+    fl.replaceChildren(inkStyleControls(t, () => this.renderFlyout()));
     fl.hidden = false;
     const btn = this.vtool.querySelector(`[data-tool="${t}"]`); if (!btn) return;
     const wr = this.wrap.getBoundingClientRect(), br = btn.getBoundingClientRect();

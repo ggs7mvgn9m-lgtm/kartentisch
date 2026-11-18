@@ -566,6 +566,25 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;bac
 .textbar .tb-sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 
 .bitem.editing .mirror{display:none}
+
+/* Etappe B: Stifte, Radierer, Papier */
+.pal-btn{min-width:32px;height:32px;padding:0 5px;border-radius:8px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;flex:none;cursor:pointer}
+.pal-btn:hover{background:var(--hover);color:var(--text)} .pal-btn.active{background:var(--accent-weak);color:var(--accent)}
+.pal-txt{font-size:12.5px;font-weight:600}
+.pal-color{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+path.snap-flash{animation:snapflash .35s ease-out}
+@keyframes snapflash{from{opacity:.35}to{opacity:1}}
+path.erasing{transition:opacity .2s;opacity:0}
+.blk-ink,.cc-inkbg{container-type:inline-size}
+.cc-inkbg{border-radius:6px;margin:4px 0}
+.ibg-none{background-image:none}
+.ibg-lines{background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 5cqw;background-position:0 calc(5cqw - 1px)}
+.ibg-wide{background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 7.5cqw;background-position:0 calc(7.5cqw - 1px)}
+.ibg-grid{background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:4cqw 4cqw}
+.ibg-dots{background-image:radial-gradient(circle,var(--muted) 0.9px,transparent 1.3px);background-size:4cqw 4cqw;background-position:2cqw 2cqw}
+.ipaper-white{background-color:#ffffff} .ipaper-cream{background-color:#fbf5e4} .ipaper-gray{background-color:#ececef}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .ipaper-white{background-color:#202023} :root:not([data-theme="light"]) .ipaper-cream{background-color:#2c2921} :root:not([data-theme="light"]) .ipaper-gray{background-color:#2a2a2e} }
+:root[data-theme="dark"] .ipaper-white{background-color:#202023} :root[data-theme="dark"] .ipaper-cream{background-color:#2c2921} :root[data-theme="dark"] .ipaper-gray{background-color:#2a2a2e}
 </style>
 </head>
 <body>
@@ -738,6 +757,7 @@ Object.assign(ICON, {
   tape: '<path d="M4 9.5l14.5-4 1.5 5.5-14.5 4z"/><path d="M5.5 15l1 3.5M9.5 13.9l1 3.5M13.5 12.8l1 3.5"/>',
   shapes: '<circle cx="8" cy="8.5" r="4"/><path d="M13.5 13.5h7v7h-7z"/><path d="M4 20l3.5-6 3.5 6z"/>',
   pipette: '<path d="M14.2 6.3l3.5 3.5"/><path d="M16.2 4.3a2.1 2.1 0 013 3l-1.6 1.6-3-3z"/><path d="M15.9 8.9l-8.4 8.4-2.9.8.8-2.9 8.4-8.4"/>',
+  paper: '<path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M9 10h6M9 13.5h6M9 17h4"/>',
   scribble: '<path d="M4 15c2-4 3.5-6 4.5-6s-1 6 .5 6 3-7 4.5-7-.5 7 1 7 2.5-3 4.5-5"/>'
 });
 
@@ -788,13 +808,16 @@ function decInts(str) {
   }
   return out;
 }
+const isHex = c => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
 function encStroke(st) {
   const a = []; let px = 0, py = 0, pp = 0;
   for (let i = 0; i < st.pts.length; i += 3) {
     const x = Math.round(st.pts[i] * 4), y = Math.round(st.pts[i + 1] * 4), p = Math.round(st.pts[i + 2] * 15);
     a.push(x - px, y - py, p - pp); px = x; py = y; pp = p;
   }
-  return { c: st.c, w: st.w, t: st.t, s: encInts(a) };
+  const o = { c: st.c, w: st.w, t: st.t, s: encInts(a) };
+  if (st.k && st.k !== 'f') o.k = st.k;
+  return o;
 }
 function decStroke(o) {
   if (!o || typeof o.s !== 'string') return null;
@@ -803,7 +826,9 @@ function decStroke(o) {
   if (!pts.length) return null;
   const t = o.t === 'hl' ? 'hl' : 'pen';
   const pal = t === 'hl' ? HL_COLORS : PEN_COLORS;
-  return finishStroke({ c: pal.includes(o.c) ? o.c : pal[0], w: clamp(+o.w || 3, 0.5, 60), t, pts });
+  const st = { c: pal.includes(o.c) || isHex(o.c) ? o.c : pal[0], w: clamp(+o.w || 3, 0.5, 60), t, pts };
+  if (t === 'pen' && (o.k === 'b' || o.k === 'p')) st.k = o.k;
+  return finishStroke(st);
 }
 function finishStroke(st) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -843,20 +868,24 @@ function centerPath(pts) {
   }
   return d + `L${f1(pts[(n - 1) * 3])} ${f1(pts[(n - 1) * 3 + 1])}`;
 }
-function outlinePath(pts, size) {
+// Umriss eines Strichs; Stifttyp: f = Füller, b = Kugelschreiber, p = Pinsel
+function outlinePath(pts, size, kind) {
   const n = pts.length / 3;
-  const rad = p => (size / 2) * (0.4 + 1.2 * clamp(p, 0.05, 1));
+  const rad = kind === 'b' ? (() => (size / 2) * 0.95)
+    : kind === 'p' ? (p => (size / 2) * (0.12 + 2.3 * Math.pow(clamp(p, 0.05, 1), 1.25)))
+    : (p => (size / 2) * (0.4 + 1.2 * clamp(p, 0.05, 1)));
   if (n === 1 || (n === 2 && Math.hypot(pts[3] - pts[0], pts[4] - pts[1]) < 0.5)) {
     const r = rad(pts[2]), x = pts[0], y = pts[1];
     return `M${f1(x - r)} ${f1(y)}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`;
   }
   const L = [], R = [], rs = [];
+  const t0 = kind === 'b' ? 0.85 : kind === 'p' ? 0.2 : 0.55, t1 = kind === 'b' ? 0.08 : kind === 'p' ? 0.11 : 0.15;
   for (let i = 0; i < n; i++) {
     const i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1);
     let tx = pts[i1 * 3] - pts[i0 * 3], ty = pts[i1 * 3 + 1] - pts[i0 * 3 + 1];
     const len = Math.hypot(tx, ty) || 1; tx /= len; ty /= len;
     const nx = -ty, ny = tx;
-    const taper = Math.min(1, 0.55 + 0.15 * Math.min(i, n - 1 - i));
+    const taper = Math.min(1, t0 + t1 * Math.min(i, n - 1 - i));
     const r = rad(pts[i * 3 + 2]) * taper; rs.push(r);
     const x = pts[i * 3], y = pts[i * 3 + 1];
     L.push([x + nx * r, y + ny * r]); R.push([x - nx * r, y - ny * r]);
@@ -876,16 +905,17 @@ function outlinePath(pts, size) {
     `A${f1(re)} ${f1(re)} 0 0 0 ${f1(Rr[0][0])} ${f1(Rr[0][1])}` + side(Rr) +
     `A${f1(rb)} ${f1(rb)} 0 0 0 ${f1(L[0][0])} ${f1(L[0][1])}Z`;
 }
+const inkColor = (c, hl) => isHex(c) ? c : `var(--${hl ? 'hl' : 'ink'}-${c})`;
 function strokeEl(st) {
   if (st.t === 'hl') {
     if (!st.d) st.d = centerPath(st.pts);
     const p = sv('path', { d: st.d, class: 'hl', 'stroke-width': st.w });
-    p.style.stroke = `var(--hl-${st.c})`;
+    p.style.stroke = inkColor(st.c, true);
     return p;
   }
-  if (!st.d) st.d = outlinePath(st.pts, st.w);
+  if (!st.d) st.d = outlinePath(st.pts, st.w, st.k);
   const p = sv('path', { d: st.d });
-  p.style.fill = `var(--ink-${st.c})`;
+  p.style.fill = inkColor(st.c, false);
   return p;
 }
 function strokeHit(st, x, y, r) {
@@ -1131,7 +1161,7 @@ function renderCardContent(card, opts = {}) {
   if (t || !hasContent) wrap.append(h('div', { class: 'cc-title' + (t ? '' : ' empty'), text: t || 'Ohne Titel' }));
   for (const b of card.blocks) {
     if (b.type === 'text') { if (!isEmptyHtml(b.html)) wrap.append(richDiv(b.html, 'cc-text')); }
-    else if (b.type === 'ink') { if (b.strokes.length) wrap.append(inkSvg(b, true)); }
+    else if (b.type === 'ink') { if (b.strokes.length) { const s = inkSvg(b, true); wrap.append(b.bg || b.paper ? h('div', { class: 'cc-inkbg ' + inkBgClass(b) }, s) : s); } }
     else if (b.type === 'image') { const img = h('img', { class: 'cc-img', alt: '', draggable: 'false' }); Files.bind(img, 'src', b); if (opts.onImg) img.addEventListener('load', opts.onImg); wrap.append(img); }
     else if (b.type === 'divider') wrap.append(h('hr', { class: 'cc-hr' }));
     else if (b.type === 'todo') {
@@ -1238,7 +1268,7 @@ const isPhone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width
 const UI = {
   view: null, editingCardId: null, sel: null,
   tool: 'select', editorTool: 'pen',
-  ink: { penColor: 'k', penSize: 1, hlColor: 'y', hlSize: 1 },
+  ink: { penColor: 'k', penSize: 1, hlColor: 'y', hlSize: 1, penKind: 'f', penFav: ['k', 'b', 'r'], hlFav: ['y', 'g', 'p'], shapes: true, eraserMode: 'stroke', eraserSize: 1, eraserHl: false },
   fingerDraw: isPhone, views: {}, presTheme: 'light', collapsed: [], sbCollapsed: false
 };
 function loadUiPrefs() {
@@ -1504,11 +1534,14 @@ function resolveView(v) {
   return v.type === 'library';
 }
 
+const INK_BGS = [['none', 'Leer'], ['lines', 'Liniert'], ['wide', 'Liniert, weit'], ['grid', 'Kariert'], ['dots', 'Punkte']];
+const INK_PAPERS = [['white', 'Weiß'], ['cream', 'Creme'], ['gray', 'Grau']];
+const inkBgClass = b => 'ibg-' + (b.bg || 'std') + ' ipaper-' + (b.paper || 'std');
 // ---------- Bausteine speichern/laden ----------
 const BLOCK_FIELDS = { text: ['html'], image: ['src', 'url', 'ref', 'asset', 'sb', 'local', 'w', 'h', 'name'], file: ['asset', 'sb', 'local', 'name', 'size', 'mime'], video: ['asset', 'sb', 'local', 'name', 'size', 'mime'], audio: ['asset', 'sb', 'local', 'name', 'size', 'mime'],
   divider: [], todo: ['items'], toggle: ['title', 'html', 'open'], link: ['url', 'title'], embed: ['url', 'provider', 'vid', 'title'] };
 function serBlock(b) {
-  if (b.type === 'ink') return { id: b.id, type: 'ink', h: Math.round(b.h), strokes: b.strokes.map(encStroke) };
+  if (b.type === 'ink') { const o = { id: b.id, type: 'ink', h: Math.round(b.h), strokes: b.strokes.map(encStroke) }; if (b.bg) o.bg = b.bg; if (b.paper) o.paper = b.paper; return o; }
   const o = { id: b.id, type: b.type };
   for (const f of BLOCK_FIELDS[b.type] || []) { if (b[f] == null) continue; o[f] = f === 'items' ? b.items.map(i => ({ id: i.id, html: i.html, done: !!i.done })) : b[f]; }
   return o;
@@ -1520,7 +1553,7 @@ function deserBlock(b) {
   const id = isId(b.id) ? b.id : newId();
   const media = () => { const o = { id, type: b.type, name: str(b.name, 200), size: num(b.size, 0), mime: str(b.mime, 100) }; if (isAssetId(b.asset)) o.asset = b.asset; else if (isSbPath(b.sb)) o.sb = b.sb; else if (isId(b.local)) o.local = b.local; else return null; return o; };
   switch (b.type) {
-    case 'ink': return { id, type: 'ink', h: clamp(num(b.h, 300), 80, 6000), strokes: (Array.isArray(b.strokes) ? b.strokes : []).map(decStroke).filter(Boolean) };
+    case 'ink': { const o = { id, type: 'ink', h: clamp(num(b.h, 300), 80, 6000), strokes: (Array.isArray(b.strokes) ? b.strokes : []).map(decStroke).filter(Boolean) }; if (INK_BGS.some(x => x[0] === b.bg)) o.bg = b.bg; if (INK_PAPERS.some(x => x[0] === b.paper)) o.paper = b.paper; return o; }
     case 'image': {
       const o = { id, type: 'image', w: num(b.w, 0), h: num(b.h, 0), name: str(b.name, 200) };
       if (isAssetId(b.asset)) o.asset = b.asset;
@@ -1581,8 +1614,9 @@ function inkTarget(t) {
 }
 function applyInkOp(e, inverse) {
   const tg = inkTarget(e.target); if (!tg) return;
-  const add = (e.op === 'add') !== inverse;
-  for (const st of e.strokes) { const i = tg.arr.indexOf(st); if (add && i < 0) tg.arr.push(st); if (!add && i >= 0) tg.arr.splice(i, 1); }
+  const put = (list, add) => { for (const st of list) { const i = tg.arr.indexOf(st); if (add && i < 0) tg.arr.push(st); if (!add && i >= 0) tg.arr.splice(i, 1); } };
+  if (e.op === 'swap') { put(e.removed, inverse); put(e.added, !inverse); }
+  else put(e.strokes, (e.op === 'add') !== inverse);
   touch(tg.ent);
   if (e.target.kind === 'board') { if (BV.boardId === e.target.id) BV.renderInk(); }
   else { Editor.rerenderInk(e.target.cardId, e.target.blockId); refreshCardEverywhere(e.target.cardId); }
@@ -1593,22 +1627,50 @@ function refreshUndoButtons() {
 }
 
 // ---------- Werkzeugleiste (Stift, Marker, Radierer, Farben, Größen) ----------
-function inkStyleControls(hl, after) {
-  const frag = document.createDocumentFragment();
-  const colors = hl ? HL_COLORS : PEN_COLORS, names = hl ? HL_NAMES : PEN_NAMES;
-  const cur = hl ? UI.ink.hlColor : UI.ink.penColor;
-  for (const c of colors) {
-    const b = h('button', { class: 'swatch' + (c === cur ? ' active' : ''), type: 'button', title: names[c], 'aria-label': (hl ? 'Marker ' : 'Stift ') + names[c],
-      onclick: () => { if (hl) UI.ink.hlColor = c; else UI.ink.penColor = c; saveUiPrefs(); after(); } });
-    const i = h('i'); i.style.background = `var(--${hl ? 'hl' : 'ink'}-${c})`; b.append(i); frag.append(b);
+function inkStyleControls(tool, after) {
+  if (tool === true || tool === false) tool = tool ? 'hl' : 'pen';
+  const frag = document.createDocumentFragment(); const I = UI.ink;
+  const set = (fn) => () => { fn(); saveUiPrefs(); after(); };
+  const sep = () => frag.append(h('span', { class: 'tb-sep' }));
+  const pick = (title, val, on, html, active) => { const b = h('button', { class: 'pal-btn' + (active ? ' active' : ''), type: 'button', title, 'aria-label': title, 'aria-pressed': active ? 'true' : 'false', html, onclick: set(on) }); return b; };
+  if (tool === 'eraser') {
+    frag.append(pick('Ganze Striche löschen', 'stroke', () => { I.eraserMode = 'stroke'; }, '<span class="pal-txt">Strich</span>', I.eraserMode !== 'part'));
+    frag.append(pick('Nur den berührten Teil löschen', 'part', () => { I.eraserMode = 'part'; }, '<span class="pal-txt">Teil</span>', I.eraserMode === 'part'));
+    sep();
+    [0, 1, 2].forEach(si => { const b = pick('Radierer ' + ['klein', 'mittel', 'groß'][si], si, () => { I.eraserSize = si; }, '', (I.eraserSize ?? 1) === si); b.classList.add('size'); const i = h('i'); const d = [6, 10, 16][si]; i.style.width = i.style.height = d + 'px'; i.style.background = 'transparent'; i.style.border = '1.5px solid var(--text)'; b.append(i); frag.append(b); });
+    sep();
+    frag.append(pick('Nur Textmarker radieren', 'hl', () => { I.eraserHl = !I.eraserHl; }, icon('hl', 18), !!I.eraserHl));
+    return frag;
   }
-  frag.append(h('span', { class: 'tb-sep' }));
-  const curS = hl ? UI.ink.hlSize : UI.ink.penSize;
+  const hl = tool === 'hl';
+  if (!hl) {
+    for (const [k, ic, name] of [['f', 'fountain', 'Füller'], ['b', 'ballpen', 'Kugelschreiber'], ['p', 'brush', 'Pinsel']]) frag.append(pick(name, k, () => { I.penKind = k; }, icon(ic, 19), (I.penKind || 'f') === k));
+    sep();
+  }
+  const favKey = hl ? 'hlFav' : 'penFav', curKey = hl ? 'hlColor' : 'penColor';
+  const favs = I[favKey] || (hl ? ['y', 'g', 'p'] : ['k', 'b', 'r']);
+  const names = hl ? HL_NAMES : PEN_NAMES;
+  let activeIdx = favs.indexOf(I[curKey]); if (activeIdx < 0) activeIdx = 0;
+  favs.forEach((c, idx) => {
+    const b = h('button', { class: 'swatch' + (I[curKey] === c ? ' active' : ''), type: 'button', title: (isHex(c) ? 'Eigene Farbe' : names[c] || c) + ' – nochmal tippen zum Ändern', 'aria-label': (hl ? 'Marker ' : 'Stift ') + (isHex(c) ? 'eigene Farbe' : names[c] || c),
+      onclick: () => { if (I[curKey] === c) { openPicker(idx); return; } I[curKey] = c; saveUiPrefs(); after(); } });
+    const i = h('i'); i.style.background = inkColor(c, hl); b.append(i); frag.append(b);
+  });
+  const input = h('input', { type: 'color', class: 'pal-color', 'aria-label': 'Farbe wählen', tabindex: '-1' });
+  const openPicker = idx => {
+    const cur = favs[idx]; input.value = isHex(cur) ? cur : (getComputedStyle(document.documentElement).getPropertyValue(`--${hl ? 'hl' : 'ink'}-${cur}`).trim() || '#000000').slice(0, 7);
+    input.onchange = () => { const v = input.value.toLowerCase(); const nf = favs.slice(); nf[idx] = v; I[favKey] = nf; I[curKey] = v; saveUiPrefs(); after(); };
+    input.click();
+  };
+  frag.append(h('button', { class: 'pal-btn pal-picker', type: 'button', title: 'Eigene Farbe für das gewählte Feld', 'aria-label': 'Eigene Farbe wählen', html: icon('pipette', 18), onclick: () => openPicker(activeIdx) }), input);
+  sep();
+  const curS = hl ? I.hlSize : I.penSize;
   [0, 1, 2].forEach(si => {
     const b = h('button', { class: 'size' + (si === curS ? ' active' : ''), type: 'button', title: ['Fein', 'Mittel', 'Breit'][si], 'aria-label': 'Strichstärke ' + ['fein', 'mittel', 'breit'][si],
-      onclick: () => { if (hl) UI.ink.hlSize = si; else UI.ink.penSize = si; saveUiPrefs(); after(); } });
+      onclick: () => { if (hl) I.hlSize = si; else I.penSize = si; saveUiPrefs(); after(); } });
     const i = h('i'); const d = [4, 7, 11][si]; i.style.width = i.style.height = d + 'px'; b.append(i); frag.append(b);
   });
+  if (!hl) { sep(); frag.append(pick('Formen gerade ziehen: Stift am Ende kurz halten', 'shapes', () => { I.shapes = I.shapes === false; }, icon('shapes', 19), I.shapes !== false)); }
   return frag;
 }
 // Stiftleiste im Kartenpanel
@@ -1617,7 +1679,7 @@ function inkPalette() {
   const tool = UI.editorTool;
   const setTool = t => { UI.editorTool = t; saveUiPrefs(); rerenderPalettes(); };
   for (const [t, label] of [['pen', 'Stift'], ['hl', 'Textmarker'], ['eraser', 'Radierer']]) frag.append(iconBtn(t, label, () => setTool(t), tool === t ? 'active' : ''));
-  if (tool === 'pen' || tool === 'hl') { frag.append(h('span', { class: 'tb-sep' })); frag.append(inkStyleControls(tool === 'hl', rerenderPalettes)); }
+  frag.append(h('span', { class: 'tb-sep' })); frag.append(inkStyleControls(tool, rerenderPalettes));
   frag.append(h('span', { class: 'tb-sep' }));
   const u = iconBtn('undo', 'Rückgängig (⌘Z)', () => Undo.undo()); u.dataset.act = 'undo';
   const r = iconBtn('redo', 'Wiederholen (⇧⌘Z)', () => Undo.redo()); r.dataset.act = 'redo';
@@ -1631,19 +1693,97 @@ function rerenderPalettes() {
 }
 function currentStrokeStyle(tool) {
   if (tool === 'hl') return { t: 'hl', c: UI.ink.hlColor, w: HL_SIZES[UI.ink.hlSize] || 20 };
-  return { t: 'pen', c: UI.ink.penColor, w: PEN_SIZES[UI.ink.penSize] || 3 };
+  const k = UI.ink.penKind || 'f';
+  return { t: 'pen', c: UI.ink.penColor, w: (PEN_SIZES[UI.ink.penSize] || 3) * (k === 'p' ? 1.6 : k === 'b' ? 0.85 : 1), k };
 }
 
 // ---------- Zeichenvorgang (gemeinsam für Board und Karten) ----------
+// Strich gleichmäßig nachpunkten (für Teil-Radierer und Kritzel-Erkennung)
+function resampleStroke(pts, step) {
+  const out = [pts[0], pts[1], pts[2]];
+  for (let i = 3; i < pts.length; i += 3) {
+    const ax = pts[i - 3], ay = pts[i - 2], ap = pts[i - 1], bx = pts[i], by = pts[i + 1], bp = pts[i + 2];
+    const d = Math.hypot(bx - ax, by - ay), k = Math.max(1, Math.ceil(d / step));
+    for (let j = 1; j <= k; j++) { const t = j / k; out.push(ax + (bx - ax) * t, ay + (by - ay) * t, ap + (bp - ap) * t); }
+  }
+  return out;
+}
+// Teile eines Strichs, die außerhalb des Radierkreises liegen
+function splitStroke(st, x, y, r) {
+  const pts = resampleStroke(st.pts, Math.max(1, r / 3)); const m = r + st.w / 2; const out = []; let cur = [];
+  for (let i = 0; i < pts.length; i += 3) {
+    if (Math.hypot(pts[i] - x, pts[i + 1] - y) > m) cur.push(pts[i], pts[i + 1], pts[i + 2]);
+    else { if (cur.length >= 6) out.push(cur); cur = []; }
+  }
+  if (cur.length >= 6) out.push(cur);
+  return out.map(p => finishStroke(Object.assign({ t: st.t, c: st.c, w: st.w }, st.k ? { k: st.k } : {}, { pts: simplify(p, 0.25) })));
+}
+// Hin-und-her-Kritzeln erkennen
+function isScribble(pts, scale) {
+  if (pts.length < 30) return false;
+  const s = simplify(pts, 2.5 * scale); const n = s.length / 3; if (n < 6) return false;
+  let turns = 0, len = 0, x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < n; i++) { const x = s[i * 3], y = s[i * 3 + 1]; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  for (let i = 1; i < n; i++) len += Math.hypot(s[i * 3] - s[i * 3 - 3], s[i * 3 + 1] - s[i * 3 - 2]);
+  for (let i = 1; i < n - 1; i++) {
+    const ax = s[i * 3] - s[i * 3 - 3], ay = s[i * 3 + 1] - s[i * 3 - 2], bx = s[i * 3 + 3] - s[i * 3], by = s[i * 3 + 4] - s[i * 3 + 1];
+    const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by); if (!la || !lb) continue;
+    if ((ax * bx + ay * by) / (la * lb) < -0.55) turns++;
+  }
+  const diag = Math.hypot(x1 - x0, y1 - y0) || 1;
+  return turns >= 4 && len > 2.6 * diag;
+}
+// Formen gerade ziehen: Linie, Linienzug (z. B. Pfeil), Dreieck, Rechteck, Kreis/Ellipse, Vieleck
+function recognizeShape(pts, scale) {
+  const n = pts.length / 3; if (n < 4) return null;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, len = 0; const ps = [];
+  for (let i = 0; i < n; i++) { const x = pts[i * 3], y = pts[i * 3 + 1]; ps.push(pts[i * 3 + 2]); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); if (i) len += Math.hypot(x - pts[i * 3 - 3], y - pts[i * 3 - 2]); }
+  const D = Math.hypot(x1 - x0, y1 - y0); if (D < 14 * scale) return null;
+  ps.sort((a, b) => a - b); const p = ps[Math.floor(ps.length / 2)] || 0.5;
+  const step = 2.5 * scale;
+  const poly = (vs, close) => { const out = []; const all = close ? [...vs, vs[0]] : vs; for (let i = 0; i < all.length - 1; i++) { const [ax, ay] = all[i], [bx, by] = all[i + 1]; const k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step)); for (let j = i ? 1 : 0; j <= k; j++) out.push(ax + (bx - ax) * j / k, ay + (by - ay) * j / k, p); } return out; };
+  const sx = pts[0], sy = pts[1], ex = pts[(n - 1) * 3], ey = pts[(n - 1) * 3 + 1];
+  const closed = Math.hypot(ex - sx, ey - sy) < Math.max(0.22 * D, 14 * scale) && len > 1.6 * D;
+  if (!closed) {
+    const v = simplify(pts, Math.max(0.07 * D, 5 * scale)); const m = v.length / 3;
+    if (m <= 6) { const vs = []; for (let i = 0; i < m; i++) vs.push([v[i * 3], v[i * 3 + 1]]); return poly(vs, false); }
+    return null;
+  }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = Math.max(1, (x1 - x0) / 2), ry = Math.max(1, (y1 - y0) / 2);
+  let err = 0; for (let i = 0; i < n; i++) err += Math.abs(Math.hypot((pts[i * 3] - cx) / rx, (pts[i * 3 + 1] - cy) / ry) - 1); err /= n;
+  const v = simplify(pts.slice(0, -3).concat([sx, sy, p]), 0.1 * D); let m = v.length / 3 - 1;
+  const vs = []; for (let i = 0; i < m; i++) vs.push([v[i * 3], v[i * 3 + 1]]);
+  if (m === 3) return poly(vs, true);
+  if (m === 4 && err > 0.09) {
+    // fast achsparallel? dann sauberes Rechteck
+    const ang = Math.atan2(vs[1][1] - vs[0][1], vs[1][0] - vs[0][0]) % (Math.PI / 2);
+    if (Math.abs(ang) < 0.2 || Math.abs(Math.abs(ang) - Math.PI / 2) < 0.2) return poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true);
+    return poly(vs, true);
+  }
+  if (err < 0.2) {
+    const circ = Math.abs(rx - ry) / Math.max(rx, ry) < 0.14; const R = (rx + ry) / 2;
+    const a0 = Math.atan2(sy - cy, sx - cx); const k = Math.max(48, Math.ceil(2 * Math.PI * Math.max(rx, ry) / step)); const out = [];
+    for (let j = 0; j <= k; j++) { const a = a0 + 2 * Math.PI * j / k; out.push(cx + (circ ? R : rx) * Math.cos(a), cy + (circ ? R : ry) * Math.sin(a), p); }
+    return out;
+  }
+  if (m >= 5 && m <= 8) return poly(vs, true);
+  return null;
+}
 class InkGesture {
   constructor({ tool, layer, strokes, scale, target, onDone }) {
     this.tool = tool; this.layer = layer; this.strokes = strokes; this.scale = scale; this.target = target; this.onDone = onDone;
-    this.removed = [];
-    if (tool !== 'eraser') { Object.assign(this, currentStrokeStyle(tool)); this.pts = []; this.el = null; }
+    this.removed = []; this.added = [];
+    if (tool === 'eraser') {
+      this.er = [5, 11, 24][UI.ink.eraserSize] || 11; this.part = UI.ink.eraserMode === 'part'; this.onlyHl = !!UI.ink.eraserHl;
+    } else { Object.assign(this, currentStrokeStyle(tool)); this.pts = []; this.el = null; this.shapes = tool === 'pen' && UI.ink.shapes !== false; }
   }
   add(x, y, p) {
     if (this.tool === 'eraser') { this.erase(x, y); return; }
+    if (this.snapped) return;
     const pts = this.pts, n = pts.length;
+    if (this.shapes) {
+      if (!this.anchor || Math.hypot(x - this.anchor[0], y - this.anchor[1]) > 5 * this.scale) { this.anchor = [x, y]; clearTimeout(this.holdT); this.holdT = setTimeout(() => this.snap(), 600); }
+    }
     if (n) {
       const lx = pts[n - 3], ly = pts[n - 2], dx = x - lx, dy = y - ly;
       if (dx * dx + dy * dy < (0.7 * this.scale) ** 2) return;
@@ -1651,30 +1791,66 @@ class InkGesture {
     }
     pts.push(x, y, p); this.draw();
   }
+  snap() {
+    if (this.snapped || !this.pts || this.pts.length < 12) return;
+    const shape = recognizeShape(this.pts, this.scale); if (!shape) return;
+    this.pts = shape; this.snapped = true; this.draw();
+    if (this.el) { this.el.classList.add('snap-flash'); }
+    try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+  }
   draw() {
-    const st = { t: this.t, c: this.c, w: this.w, pts: this.pts };
-    const d = this.t === 'hl' ? centerPath(this.pts) : outlinePath(this.pts, this.w);
+    const st = { t: this.t, c: this.c, w: this.w, k: this.k, pts: this.pts };
+    const d = this.t === 'hl' ? centerPath(this.pts) : outlinePath(this.pts, this.w, this.k);
     if (!this.el) { this.el = strokeEl(Object.assign(st, { d })); this.layer.append(this.el); }
     else this.el.setAttribute('d', d);
   }
   erase(x, y) {
-    const r = 9 * this.scale;
+    const r = this.er * this.scale;
     for (let i = this.strokes.length - 1; i >= 0; i--) {
       const st = this.strokes[i];
-      if (strokeHit(st, x, y, r)) { this.strokes.splice(i, 1); this.removed.push(st); if (st._el) st._el.remove(); }
+      if (this.onlyHl && st.t !== 'hl') continue;
+      if (!strokeHit(st, x, y, r)) continue;
+      const parent = st._el && st._el.parentNode;
+      this.strokes.splice(i, 1); if (st._el) st._el.remove();
+      const ai = this.added.indexOf(st); if (ai >= 0) this.added.splice(ai, 1); else this.removed.push(st);
+      if (this.part) for (const f of splitStroke(st, x, y, r)) { this.strokes.push(f); this.added.push(f); const el = strokeEl(f); f._el = el; if (parent) parent.append(el); }
     }
   }
-  end(x, y, p) {
-    if (this.tool === 'eraser') { if (this.removed.length) { Undo.push({ target: this.target, op: 'remove', strokes: this.removed }); this.onDone && this.onDone(); } return; }
-    if (x != null && this.pts.length) { const n = this.pts.length; this.pts[n - 3] = x; this.pts[n - 2] = y; }
+  end(x, y) {
+    clearTimeout(this.holdT);
+    if (this.tool === 'eraser') {
+      if (this.added.length) { Undo.push({ target: this.target, op: 'swap', removed: this.removed, added: this.added }); this.onDone && this.onDone(); }
+      else if (this.removed.length) { Undo.push({ target: this.target, op: 'remove', strokes: this.removed }); this.onDone && this.onDone(); }
+      return;
+    }
+    if (!this.snapped && x != null && this.pts.length) { const n = this.pts.length; this.pts[n - 3] = x; this.pts[n - 2] = y; }
     if (!this.pts.length) return;
-    const st = finishStroke({ t: this.t, c: this.c, w: this.w, pts: simplify(this.pts, 0.28 * this.scale) });
+    // Kritzeln zum Löschen
+    if (this.tool === 'pen' && !this.snapped && isScribble(this.pts, this.scale)) {
+      const probe = resampleStroke(this.pts, 3 * this.scale); const hits = [];
+      for (const st of this.strokes) { for (let i = 0; i < probe.length; i += 3) if (strokeHit(st, probe[i], probe[i + 1], 1.5 * this.scale)) { hits.push(st); break; } }
+      if (hits.length) {
+        if (this.el) this.el.remove();
+        for (const st of hits) { const i = this.strokes.indexOf(st); if (i >= 0) this.strokes.splice(i, 1); if (st._el) { const el = st._el; el.classList.add('erasing'); setTimeout(() => el.remove(), 220); } }
+        Undo.push({ target: this.target, op: 'remove', strokes: hits });
+        this.onDone && this.onDone();
+        return;
+      }
+    }
+    const base = { t: this.t, c: this.c, w: this.w, pts: this.snapped ? this.pts : simplify(this.pts, 0.28 * this.scale) };
+    if (this.t === 'pen' && this.k && this.k !== 'f') base.k = this.k;
+    const st = finishStroke(base);
     if (this.el) this.el.remove();
     this.strokes.push(st);
     Undo.push({ target: this.target, op: 'add', strokes: [st] });
     this.onDone && this.onDone(st);
   }
-  cancel() { if (this.el) this.el.remove(); if (this.removed.length) { this.strokes.push(...this.removed); this.onDone && this.onDone(); } }
+  cancel() {
+    clearTimeout(this.holdT);
+    if (this.el) this.el.remove();
+    for (const f of this.added) { const i = this.strokes.indexOf(f); if (i >= 0) this.strokes.splice(i, 1); if (f._el) f._el.remove(); }
+    if (this.removed.length || this.added.length) { this.strokes.push(...this.removed); this.onDone && this.onDone(); }
+  }
 }
 const penPressure = e => (e.pointerType === 'pen' ? (e.pressure > 0 ? e.pressure : 0.5) : 0.5);
 const pointerMayDraw = e => e.pointerType === 'pen' || e.pointerType === 'mouse' || UI.fingerDraw;
@@ -1827,8 +2003,8 @@ const BV = {
   },
   renderFlyout() {
     const t = UI.tool, fl = this.flyout; if (!fl) return;
-    if (t !== 'pen' && t !== 'hl') { fl.hidden = true; return; }
-    fl.replaceChildren(inkStyleControls(t === 'hl', () => this.renderFlyout()));
+    if (t !== 'pen' && t !== 'hl' && t !== 'eraser') { fl.hidden = true; return; }
+    fl.replaceChildren(inkStyleControls(t, () => this.renderFlyout()));
     fl.hidden = false;
     const btn = this.vtool.querySelector(`[data-tool="${t}"]`); if (!btn) return;
     const wr = this.wrap.getBoundingClientRect(), br = btn.getBoundingClientRect();
@@ -2958,6 +3134,13 @@ class BlockEditor {
     const ctrl = h('div', { class: 'blk-ctrl' },
       iconBtn('up', 'Baustein nach oben', () => this.move(b.id, -1)), iconBtn('down', 'Baustein nach unten', () => this.move(b.id, 1)));
     if (b.type === 'link' || b.type === 'embed') ctrl.append(iconBtn('pen', 'Titel ändern', () => this.editLink(b.id)));
+    if (b.type === 'ink') { const pb = iconBtn('paper', 'Hintergrund und Papier', () => {
+      const setIt = (k, v) => this.mutate(c => { const x = c.blocks.find(y => y.id === b.id); if (x) { if (v) x[k] = v; else delete x[k]; } }, null, true);
+      const cb = b.bg || 'lines', cp = b.paper || '';
+      openMenu(pb, [...INK_BGS.map(([v, n]) => ({ label: (cb === v ? '✓ ' : '\u2003') + n, onClick: () => setIt('bg', v) })),
+        { label: (cp === '' ? '✓ ' : '\u2003') + 'Papier: Standard', onClick: () => setIt('paper', '') },
+        ...INK_PAPERS.map(([v, n]) => ({ label: (cp === v ? '✓ ' : '\u2003') + 'Papier: ' + n, onClick: () => setIt('paper', v) }))]);
+    }); ctrl.append(pb); }
     ctrl.append(iconBtn('trash', 'Baustein löschen', () => this.remove(b.id)));
     ctrl.children[0].disabled = i === 0; ctrl.children[1].disabled = i === n - 1;
     const inline = this.opts.inline;
@@ -2985,7 +3168,7 @@ class BlockEditor {
       }
       case 'divider': wrap.append(h('hr', { class: 'cc-hr' })); break;
       case 'ink': {
-        const box = h('div', { class: 'blk-ink', 'aria-label': 'Handschrift-Feld' });
+        const box = h('div', { class: 'blk-ink ' + inkBgClass(b), 'aria-label': 'Handschrift-Feld' });
         const svg = sv('svg', { viewBox: `0 0 ${INK_W} ${b.h}` }); const g = sv('g'), live = sv('g'); svg.append(g, live); box.append(svg);
         for (const st of b.strokes) { const p = strokeEl(st); st._el = p; g.append(p); }
         const grow = h('div', { class: 'ink-grow', text: 'Ziehen für mehr Platz' });

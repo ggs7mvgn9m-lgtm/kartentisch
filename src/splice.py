@@ -302,5 +302,10 @@ between('// ---------- Tastatur ----------','// ---------- Tastatur ----------',
 rep("""  connectCloud();
   if (!window.claude""", """  connectCloud(); TextBar.init();
   if (!window.claude""")
+
+between('function encStroke(st) {', 'function finishStroke(st) {', read('ink_codec.js'))
+between('function outlinePath(pts, size) {', 'function strokeHit(st, x, y, r) {', read('ink_render.js'))
+between('class InkGesture {', 'const penPressure', read('ink_gesture.js'))
+rep("  ink: { penColor: 'k', penSize: 1, hlColor: 'y', hlSize: 1 },", "  ink: { penColor: 'k', penSize: 1, hlColor: 'y', hlSize: 1, penKind: 'f', penFav: ['k', 'b', 'r'], hlFav: ['y', 'g', 'p'], shapes: true, eraserMode: 'stroke', eraserSize: 1, eraserHl: false },")
 open(dst,'w',encoding='utf-8').write(s)
 print('spliced', len(s))
