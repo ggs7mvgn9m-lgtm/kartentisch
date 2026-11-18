@@ -530,6 +530,42 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;bac
 .hep-progress .bar{width:140px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;flex:none}
 .hep-progress .bar i{display:block;height:100%;background:var(--accent);width:0}
 .hep-summary{margin:0;padding-left:18px;line-height:1.6}
+
+/* Etappe A: Symbole, Aufklappen, Spiegel, Schriften */
+.ic{stroke-width:1.55}
+.icon-btn,.vtool .icon-btn{color:var(--muted)}
+.icon-btn:hover{color:var(--text)}
+.icon-btn.active,.vtool .icon-btn.active{color:var(--accent)}
+.bitem.editing{z-index:60}
+.mirror{position:absolute;bottom:6px;right:22px;z-index:3;display:flex;align-items:center;gap:3px;height:20px;padding:0 7px 0 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.mirror:hover{color:var(--accent);border-color:var(--accent)}
+.mirror .ic{width:13px;height:13px}
+@font-face{font-family:'KT Caveat';src:url('fonts/caveat-latin-500.woff2') format('woff2');font-weight:400 700;font-display:swap}
+.f-serif{font-family:ui-serif,'New York',Georgia,'Times New Roman',serif}
+.f-round{font-family:ui-rounded,'SF Pro Rounded','Arial Rounded MT Bold',system-ui,sans-serif}
+.f-hand{font-family:'KT Caveat','Bradley Hand','Segoe Print',cursive;font-size:1.22em;line-height:1.25}
+.f-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.f-std{font-family:inherit}
+.s-s{font-size:.82em}.s-m{font-size:1em}.s-l{font-size:1.3em}.s-xl{font-size:1.7em;line-height:1.25}
+.f-hand.s-l{font-size:1.55em}.f-hand.s-xl{font-size:2em}
+.tc-red{color:#d9412b}.tc-orange{color:#e07a1f}.tc-green{color:#2e9b4f}.tc-blue{color:#2f6fed}.tc-violet{color:#7c4dcc}.tc-gray{color:#8e8e93}.tc-std{color:inherit}
+.hl-yellow{background:#ffe680;border-radius:3px}.hl-green{background:#c4efc4;border-radius:3px}.hl-blue{background:#cfe0ff;border-radius:3px}.hl-rose{background:#ffd0dc;border-radius:3px}.hl-none{background:transparent}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .hl-yellow{background:#6b5a12} :root:not([data-theme="light"]) .hl-green{background:#24542f} :root:not([data-theme="light"]) .hl-blue{background:#22406f} :root:not([data-theme="light"]) .hl-rose{background:#6a2c3b} }
+.textbar{position:fixed;z-index:130;display:flex;flex-wrap:wrap;align-items:center;gap:2px;max-width:min(560px,94vw);padding:5px;border-radius:11px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-float);font-size:14px}
+.tb-btn{min-width:30px;height:30px;padding:0 6px;border:0;border-radius:7px;background:transparent;color:var(--text);cursor:pointer;font-size:14px}
+.tb-btn:hover{background:var(--hover)} .tb-btn.on{background:var(--accent-weak);color:var(--accent)}
+.tb-size{min-width:28px;font-size:12.5px;font-weight:600}
+.tb-sel{height:30px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--text);padding:0 6px;font-size:13px;margin:0 2px}
+.tb-group{display:flex;align-items:center;gap:1px}
+.tb-row{flex-basis:100%;display:flex;align-items:center;gap:4px;padding:4px 2px 1px;border-top:1px solid var(--line);margin-top:3px}
+.tb-dot{min-width:24px;width:24px;height:24px;padding:0;border-radius:50%;display:grid;place-items:center}
+.tb-dot::after{content:'';width:16px;height:16px;border-radius:50%;background:var(--dot);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.tb-dot.hl::after{border-radius:4px}
+.tb-dot.none::after{background:linear-gradient(135deg,transparent 45%,#d9412b 45%,#d9412b 55%,transparent 55%),var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.tb-a{font-weight:700;text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:3px;text-underline-offset:2px}
+.textbar .tb-sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+
+.bitem.editing .mirror{display:none}
 </style>
 </head>
 <body>
@@ -662,6 +698,49 @@ const ICON = {
   list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/>',
   olist: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 4.5h1.5V9M3.8 9h3.2M3.8 13.2c.4-.8 1.2-1.2 2-1.1.9.1 1.4.9 1 1.7L3.8 17.5h3.4"/>',
 };
+// ---------- Symbole im Heptabase-Stil: dünne, runde Linien ----------
+Object.assign(ICON, {
+  select: '<path d="M6 4.5l12.2 6.3-5.3 1.6-2.2 5.3z"/><path d="M12.9 12.4l4.6 4.6"/>',
+  pen: '<path d="M15.6 4.6a2.1 2.1 0 013 3L8.4 17.8 4.5 19.5l1.7-3.9z"/><path d="M13.8 6.4l3.8 3.8"/>',
+  hl: '<path d="M14.8 4.3l4.9 4.9-7.6 7.6H7.2v-4.9z"/><path d="M7.2 16.8L4.5 19.5h5"/><path d="M11.8 7.3l4.9 4.9"/>',
+  eraser: '<path d="M8.3 19.5h11.2"/><path d="M4.9 15.1l9.2-9.2a2 2 0 012.8 0l2.2 2.2a2 2 0 010 2.8l-8.6 8.6H8.6z"/><path d="M9.1 10.9l5 5"/>',
+  connect: '<path d="M5 18.5c3.5 0 4.5-13 10.5-13"/><path d="M15.5 2.8l3 2.7-3 2.7"/><circle cx="5" cy="18.5" r="1.5"/>',
+  undo: '<path d="M8.5 6L4.5 10l4 4"/><path d="M4.8 10h9.4a5.3 5.3 0 010 10.6H10"/>',
+  redo: '<path d="M15.5 6l4 4-4 4"/><path d="M19.2 10H9.8a5.3 5.3 0 000 10.6H14"/>',
+  plus: '<path d="M12 5.5v13M5.5 12h13"/>',
+  cards: '<rect x="3.5" y="7" width="12.5" height="13.5" rx="2.2"/><path d="M7.5 3.5h10.8a2.2 2.2 0 012.2 2.2V16"/>',
+  card: '<rect x="4.5" y="4" width="15" height="16" rx="2.4"/><path d="M8 9h8M8 12.5h8M8 16h4.5"/>',
+  text: '<path d="M6 7V5.5h12V7"/><path d="M12 5.5v13"/><path d="M9.5 18.5h5"/>',
+  board: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><rect x="6.8" y="7.8" width="4.6" height="3.8" rx=".9"/><rect x="12.6" y="12.4" width="4.6" height="3.8" rx=".9"/>',
+  subboard: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><rect x="6.8" y="7.8" width="4.6" height="3.8" rx=".9"/><path d="M15.2 11.5v5M12.7 14h5"/>',
+  section: '<rect x="3.5" y="5" width="17" height="14.5" rx="2.4" stroke-dasharray="2.6 2.4"/><path d="M6.5 8.5h6"/>',
+  image: '<rect x="3.5" y="5" width="17" height="14" rx="2.4"/><circle cx="9" cy="10" r="1.7"/><path d="M20.5 15.5l-4.7-4.6-8.8 8.1"/>',
+  present: '<rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8"/><path d="M12 16v3.5M8.5 19.5h7"/><path d="M10.4 8l3.8 2.2-3.8 2.2z"/>',
+  play: '<path d="M8 5.2l10.5 6.8L8 18.8z"/>',
+  search: '<circle cx="11" cy="11" r="6.2"/><path d="M19.5 19.5l-4-4"/>',
+  zin: '<circle cx="11" cy="11" r="6.2"/><path d="M19.5 19.5l-4-4M8.4 11h5.2M11 8.4v5.2"/>',
+  zout: '<circle cx="11" cy="11" r="6.2"/><path d="M19.5 19.5l-4-4M8.4 11h5.2"/>',
+  fit: '<path d="M4.5 9V4.5H9M19.5 9V4.5H15M4.5 15v4.5H9M19.5 15v4.5H15"/>',
+  trash: '<path d="M4.5 7h15M10 11v5.5M14 11v5.5M6.5 7l.8 11.6a2 2 0 002 1.9h5.4a2 2 0 002-1.9L17.5 7M9.5 7V5a1 1 0 011-1h3a1 1 0 011 1v2"/>',
+  folder: '<path d="M3.5 7.4a2 2 0 012-2h3.6l2 2.1h7.4a2 2 0 012 2v7.6a2 2 0 01-2 2h-13a2 2 0 01-2-2z"/>',
+  folderplus: '<path d="M3.5 7.4a2 2 0 012-2h3.6l2 2.1h7.4a2 2 0 012 2v7.6a2 2 0 01-2 2h-13a2 2 0 01-2-2z"/><path d="M12 10.8v5M9.5 13.3h5"/>',
+  open: '<path d="M14 4.5h5.5V10M19.5 4.5L12 12"/><path d="M17.5 14v3.5a2 2 0 01-2 2h-9a2 2 0 01-2-2v-9a2 2 0 012-2H10"/>',
+  link: '<path d="M10 14a3.8 3.8 0 005.4 0l3-3a3.8 3.8 0 00-5.4-5.4l-.9.9"/><path d="M14 10a3.8 3.8 0 00-5.4 0l-3 3a3.8 3.8 0 005.4 5.4l.9-.9"/>',
+  cardlink: '<rect x="3.5" y="5" width="10.5" height="14" rx="2.2"/><path d="M14 12h6.5M17.8 9.3l2.7 2.7-2.7 2.7"/>',
+  more: '<circle cx="5.5" cy="12" r="1.25" fill="currentColor"/><circle cx="12" cy="12" r="1.25" fill="currentColor"/><circle cx="18.5" cy="12" r="1.25" fill="currentColor"/>',
+  close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  sbleft: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><path d="M9.5 4.5v15"/><path d="M15.5 9.5L13 12l2.5 2.5"/>',
+  // Werkzeuge für die Stiftpalette (Etappe B/C)
+  fountain: '<path d="M12 3.5l4 6-4 10.5-4-10.5z"/><path d="M12 13.5v-4"/><circle cx="12" cy="13.5" r=".9"/>',
+  ballpen: '<path d="M16.8 4.2a2 2 0 012.9 2.9L9 17.8l-4 1.2 1.2-4z"/><path d="M14.8 6.2l2.9 2.9"/>',
+  brush: '<path d="M19.5 4.5c-2.6 1.4-6.4 5.2-8.3 7.8l1.9 1.9c2.6-1.9 6.4-5.7 7.8-8.3z"/><path d="M10.6 13.2c-2.2-.2-3.8 1.1-4 3.4-.1 1.3-.7 2-1.8 2.4 3.4 1 6.6-.3 7.3-3.3z"/>',
+  lasso: '<path d="M7.5 15.5C4.8 14.4 3.5 12.6 3.5 10.6c0-3.7 3.8-6.1 8.5-6.1s8.5 2.4 8.5 6.1-3.8 6.1-8.5 6.1c-1 0-2-.1-2.9-.3"/><path d="M9.2 16.4c-.3 1.4-1.2 2.6-2.7 3.1"/><circle cx="8.4" cy="15.7" r="1.2"/>',
+  tape: '<path d="M4 9.5l14.5-4 1.5 5.5-14.5 4z"/><path d="M5.5 15l1 3.5M9.5 13.9l1 3.5M13.5 12.8l1 3.5"/>',
+  shapes: '<circle cx="8" cy="8.5" r="4"/><path d="M13.5 13.5h7v7h-7z"/><path d="M4 20l3.5-6 3.5 6z"/>',
+  pipette: '<path d="M14.2 6.3l3.5 3.5"/><path d="M16.2 4.3a2.1 2.1 0 013 3l-1.6 1.6-3-3z"/><path d="M15.9 8.9l-8.4 8.4-2.9.8.8-2.9 8.4-8.4"/>',
+  scribble: '<path d="M4 15c2-4 3.5-6 4.5-6s-1 6 .5 6 3-7 4.5-7-.5 7 1 7 2.5-3 4.5-5"/>'
+});
+
 function icon(name, size = 20) {
   return `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ''}</svg>`;
 }
@@ -824,7 +903,7 @@ function strokeHit(st, x, y, r) {
 }
 
 // ---------- HTML bereinigen ----------
-const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H1', 'H2', 'H3', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE', 'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'CODE']);
+const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H1', 'H2', 'H3', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE', 'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'CODE', 'STRIKE']);
 const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'LINK', 'META', 'NOSCRIPT', 'IMG', 'VIDEO', 'AUDIO', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT']);
 function sanitizeHtml(html) {
   const t = document.createElement('template'); t.innerHTML = String(html || '');
@@ -848,7 +927,11 @@ function sanitizeHtml(html) {
           ch.setAttribute('data-card', id);
           continue;
         }
+        const keep = tag === 'SPAN' ? Array.from(ch.classList).filter(c => /^(f-(serif|round|hand|mono|std)|s-(s|m|l|xl)|tc-(red|orange|green|blue|violet|gray|std)|hl-(yellow|green|blue|rose|none))$/.test(c)) : [];
         for (const a of Array.from(ch.attributes)) ch.removeAttribute(a.name);
+        if (keep.length) ch.className = keep.join(' ');
+        else if (tag === 'SPAN' && !ch.attributes.length) { ch.replaceWith(...Array.from(ch.childNodes)); continue; }
+        if (tag === 'STRIKE') { const s = document.createElement('s'); s.append(...ch.childNodes); ch.replaceWith(s); }
       } else if (ch.nodeType !== 3) ch.remove();
     }
   };
@@ -1767,9 +1850,25 @@ const BV = {
     return 'bitem ' + (kind === 'card' ? 'bcard ' + colorClass(ent.color) : 'bboard') + (it.h ? '' : ' auto') +
       (this.isSel(ref) ? ' sel' : '') + (ref === this.editingId ? ' editing' : '') + (this.connectFrom === ref ? ' connect-src' : '');
   },
+  mirrorCounts() {
+    const m = new Map();
+    for (const bb of S.boards.values()) for (const i of bb.items) if (i.cardId) m.set(i.cardId, (m.get(i.cardId) || 0) + 1);
+    return m;
+  },
+  mirrorBadge(el, ref, n) {
+    let bd = el.querySelector(':scope > .mirror');
+    if (n < 2) { if (bd) bd.remove(); return; }
+    if (!bd) {
+      bd = h('button', { class: 'mirror', type: 'button', onpointerdown: e => e.stopPropagation(), ondblclick: e => e.stopPropagation(),
+        onclick: e => { e.stopPropagation(); const cur = this.boardId; openMenu(bd, boardsWithCard(ref).map(x => ({ label: (x.id === cur ? '● ' : '') + (x.name || 'Whiteboard'), onClick: () => { if (x.id === cur) return; navigate({ type: 'board', id: x.id }); requestAnimationFrame(() => { BV.select({ type: 'card', id: ref }); BV.centerOn(ref); }); } }))); } });
+      el.append(bd);
+    }
+    bd.innerHTML = icon('board', 13) + '<span>' + n + '</span>';
+    bd.title = `Liegt auf ${n} Whiteboards – Änderungen erscheinen überall. Klicken zum Wechseln.`; bd.setAttribute('aria-label', bd.title);
+  },
   renderItems() {
     const b = this.board(); if (!b || !this.itemsLayer) return;
-    const seen = new Set(); const order = [];
+    const seen = new Set(); const order = []; const mirrors = this.mirrorCounts();
     for (const it of b.items) {
       const ref = it.cardId || it.boardId, kind = it.cardId ? 'card' : 'board';
       const ent = kind === 'card' ? S.cards.get(ref) : S.boards.get(ref);
@@ -1785,6 +1884,7 @@ const BV = {
       this.placeItem(el, it);
       const wasDragging = el.classList.contains('dragging');
       el.className = this.classFor(it, kind, ent); if (wasDragging) el.classList.add('dragging');
+      if (kind === 'card') this.mirrorBadge(el, ref, mirrors.get(ref) || 0);
       const ver = kind === 'card' ? String(ent.v) : ent.v + ':' + ent.items.length;
       if (ref === this.editingId) { el._ver = ver; continue; }
       if (el._ver !== ver) { el._ver = ver; el.firstChild.replaceChildren(kind === 'card' ? renderCardContent(ent) : boardTile(ent)); }
@@ -1797,7 +1897,13 @@ const BV = {
     if (!same) for (const el of order) this.itemsLayer.append(el);
     this.layoutSoon();
   },
-  placeItem(el, it) { el.style.transform = `translate(${it.x}px,${it.y}px)`; el.style.width = it.w + 'px'; el.style.height = it.h ? it.h + 'px' : ''; },
+  placeItem(el, it) {
+    el.style.transform = `translate(${it.x}px,${it.y}px)`;
+    if (it.cardId && it.cardId === this.editingId) {
+      // beim Bearbeiten nach unten aufklappen
+      el.style.width = Math.max(it.w, 480) + 'px'; el.style.height = ''; el.style.minHeight = Math.max(it.h || 0, 560) + 'px';
+    } else { el.style.width = it.w + 'px'; el.style.height = it.h ? it.h + 'px' : ''; el.style.minHeight = ''; }
+  },
   updateClip(el) { if (el.classList.contains('editing')) { el.classList.remove('clip'); return; } el.classList.toggle('clip', el.firstChild.scrollHeight > el.clientHeight + 2); },
   layoutSoon() {
     if (this._raf) return;
@@ -2040,6 +2146,7 @@ const BV = {
     const expand = h('button', { class: 'ie-expand icon-btn', type: 'button', title: 'Im Seitenpanel öffnen', 'aria-label': 'Im Seitenpanel öffnen', html: icon('open', 15), onclick: () => Editor.open(cardId) });
     el.firstChild.replaceChildren(h('div', { class: 'bc-grip', title: 'Hier ziehen zum Verschieben' }), host, expand);
     el.className = this.classFor(this.itemOf(cardId), 'card', card);
+    this.placeItem(el, this.itemOf(cardId)); this.layoutSoon();
     this.inlineEd = new BlockEditor(cardId, host, { inline: true, onChange: () => { const c = S.cards.get(cardId), e2 = this.els.get(cardId); if (c && e2) e2._ver = String(c.v); renderSidebarSoon(); } });
     this.select({ type: 'card', id: cardId });
     setTimeout(() => {
@@ -2051,6 +2158,7 @@ const BV = {
   flushInline() { if (this.inlineEd) this.inlineEd.flush(); },
   endInlineEdit(keep) {
     const id = this.editingId; if (!id) return;
+    TextBar.hide();
     if (this.inlineEd) { this.inlineEd.saveSoon.cancel(); this.inlineEd.flush(); }
     Slash.close();
     const el = this.els.get(id);
@@ -4099,6 +4207,80 @@ const HepImages = {
     toast(failed ? `${done - failed} Bilder übernommen. ${failed} ließen sich nicht laden und bleiben als Verweis auf Heptabase.` : `${done} Heptabase-Bilder übernommen.`);
   }
 };
+// ---------- Schwebende Textleiste: Schrift, Größe, Farbe, Markierung ----------
+const TEXT_FONTS = [['', 'Standard'], ['serif', 'Serif'], ['round', 'Rund'], ['hand', 'Handschrift'], ['mono', 'Schreibmaschine']];
+const TEXT_SIZES = [['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']];
+const TEXT_COLORS = [['', 'Standard', 'var(--text)'], ['red', 'Rot', '#d9412b'], ['orange', 'Orange', '#e07a1f'], ['green', 'Grün', '#2e9b4f'], ['blue', 'Blau', '#2f6fed'], ['violet', 'Violett', '#7c4dcc'], ['gray', 'Grau', '#8e8e93']];
+const TEXT_HL_COLORS = [['', 'Keine', 'transparent'], ['yellow', 'Gelb', '#ffe680'], ['green', 'Grün', '#c4efc4'], ['blue', 'Blau', '#cfe0ff'], ['rose', 'Rosa', '#ffd0dc']];
+const SPAN_CLASS = /^(f-(serif|round|hand|mono|std)|s-(s|m|l|xl)|tc-(red|orange|green|blue|violet|gray|std)|hl-(yellow|green|blue|rose|none))$/;
+const TextBar = {
+  el: null, range: null, field: null,
+  fieldOf(node) { const el = node && (node.nodeType === 1 ? node : node.parentElement); const f = el && el.closest('[data-field]'); return f && f.isContentEditable ? f : null; },
+  init() {
+    document.addEventListener('selectionchange', debounce(() => this.check(), 120));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') this.hide(); }, true);
+    setInterval(() => { if (this.el && (!this.field || !this.field.isConnected || !this.field.isContentEditable)) this.hide(); }, 400);
+    document.addEventListener('pointerdown', e => { if (this.el && !this.el.contains(e.target)) setTimeout(() => this.check(), 0); }, true);
+    addEventListener('resize', () => this.hide());
+  },
+  check() {
+    const sel = document.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { if (!this.busy) this.hide(); return; }
+    const f = this.fieldOf(sel.anchorNode); if (!f || f !== this.fieldOf(sel.focusNode)) { this.hide(); return; }
+    this.range = sel.getRangeAt(0).cloneRange(); this.field = f; this.show();
+  },
+  hide() { this.busy = false; if (this.el) { this.el.remove(); this.el = null; } this.open = null; },
+  show() {
+    const r = this.range.getBoundingClientRect(); if (!r || (!r.width && !r.height)) return;
+    if (!this.el) { this.el = h('div', { class: 'textbar', role: 'toolbar', 'aria-label': 'Text formatieren' }); this.el.addEventListener('pointerdown', e => { if (!e.target.closest('select')) e.preventDefault(); }); document.body.append(this.el); }
+    this.render();
+    const W = this.el.offsetWidth || 360, H = this.el.offsetHeight || 40;
+    let x = Math.min(Math.max(8, r.left + r.width / 2 - W / 2), innerWidth - W - 8);
+    let y = r.bottom + 10; if (y + H > innerHeight - 8) y = Math.max(8, r.top - H - 10);
+    this.el.style.left = x + 'px'; this.el.style.top = y + 'px';
+  },
+  render() {
+    const btn = (html, title, fn, cls = '') => h('button', { class: 'tb-btn ' + cls, type: 'button', title, 'aria-label': title, html, onclick: fn });
+    const font = h('select', { class: 'tb-sel', 'aria-label': 'Schriftart', title: 'Schriftart' }, ...TEXT_FONTS.map(([v, n]) => h('option', { value: v, text: n })));
+    font.value = this.current('f'); font.onchange = () => this.apply('f', font.value || 'std');
+    const sizes = h('div', { class: 'tb-group', role: 'group', 'aria-label': 'Größe' }, ...TEXT_SIZES.map(([v, n]) => btn(n, 'Größe ' + n, () => this.apply('s', v || 'm'), (this.current('s') === v ? 'on' : '') + ' tb-size')));
+    const dots = (list, kind, title) => h('div', { class: 'tb-group', role: 'group', 'aria-label': title }, ...list.map(([v, n, c]) => { const b = btn('', title + ': ' + n, () => this.apply(kind, v || (kind === 'tc' ? 'std' : 'none')), 'tb-dot' + (kind === 'hl' ? ' hl' : '') + (v === '' ? ' none' : '')); b.style.setProperty('--dot', c); return b; }));
+    const toggle = this.open;
+    const colorBtn = btn('<span class="tb-a">A</span>', 'Textfarbe und Markierung', () => { this.open = this.open ? null : 'color'; this.show(); }, toggle ? 'on' : '');
+    this.el.replaceChildren(
+      btn('<b>F</b>', 'Fett (⌘B)', () => this.cmd('bold')), btn('<i>K</i>', 'Kursiv (⌘I)', () => this.cmd('italic')), btn('<u>U</u>', 'Unterstrichen (⌘U)', () => this.cmd('underline')), btn('<s>S</s>', 'Durchgestrichen', () => this.cmd('strikeThrough')),
+      h('span', { class: 'tb-sep' }), font, sizes, h('span', { class: 'tb-sep' }), colorBtn,
+      toggle ? h('div', { class: 'tb-row' }, dots(TEXT_COLORS, 'tc', 'Textfarbe'), h('span', { class: 'tb-sep' }), dots(TEXT_HL_COLORS, 'hl', 'Markierung')) : null);
+  },
+  restore() { const sel = document.getSelection(); sel.removeAllRanges(); sel.addRange(this.range); },
+  cmd(c) { this.busy = true; this.restore(); document.execCommand(c, false, null); this.done(); },
+  // Klasse des Elements am Anfang der Auswahl
+  current(kind) {
+    let n = this.range && this.range.startContainer; n = n && (n.nodeType === 1 ? n : n.parentElement);
+    while (n && n !== this.field) { if (n.tagName === 'SPAN') for (const c of n.classList) if (c.startsWith(kind + '-')) { const v = c.slice(kind.length + 1); return ['std', 'm', 'none'].includes(v) ? '' : v; } n = n.parentElement; }
+    return '';
+  },
+  apply(kind, value) {
+    this.busy = true; this.restore();
+    const marker = 'kt-mark-' + Math.random().toString(36).slice(2, 8);
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontName', false, marker);
+    const nodes = [...this.field.querySelectorAll(`font[face="${marker}"]`)];
+    let first = null, last = null;
+    for (const f of nodes) {
+      // gleiche Art von innen entfernen, damit die neue Wahl gilt
+      for (const s of f.querySelectorAll('span')) { for (const c of [...s.classList]) if (c.startsWith(kind + '-')) s.classList.remove(c); if (!s.classList.length) s.replaceWith(...s.childNodes); }
+      const span = document.createElement('span'); span.className = kind + '-' + value;
+      span.append(...f.childNodes); f.replaceWith(span); first = first || span; last = span;
+    }
+    if (first) { const r = document.createRange(); r.setStartBefore(first); r.setEndAfter(last); this.range = r; this.restore(); }
+    this.done();
+  },
+  done() {
+    this.field.dispatchEvent(new Event('input', { bubbles: true }));
+    setTimeout(() => { this.busy = false; const sel = document.getSelection(); if (sel.rangeCount) this.range = sel.getRangeAt(0).cloneRange(); if (this.el) this.show(); }, 0);
+  }
+};
 // ---------- Tastatur ----------
 document.addEventListener('keydown', e => {
   if ($('#modalRoot').firstChild) return;
@@ -4155,7 +4337,7 @@ async function boot() {
   for (const r of recs) applyRecord(r);
   if (!isEmptyStore()) navigate(UI.view);
   renderSidebar();
-  connectCloud();
+  connectCloud(); TextBar.init();
   if (!window.claude && window.top === window.self && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (BV.root) BV.arrowsSoon(); });
 }

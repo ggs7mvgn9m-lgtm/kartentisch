@@ -296,5 +296,11 @@ rep("""      if (isEmptyStore()) seedExamples();
       Persist.schedule(300); onDataChanged(null); updateSync();""", """      if (isEmptyStore()) seedExamples();
       Persist.schedule(300); onDataChanged(null); updateSync();
       setTimeout(() => HepImages.run(), 4000);""")
+
+rep("""function icon(name, size = 20) {""", read('icons.js') + "\n" + """function icon(name, size = 20) {""")
+between('// ---------- Tastatur ----------','// ---------- Tastatur ----------', read('textbar.js'))
+rep("""  connectCloud();
+  if (!window.claude""", """  connectCloud(); TextBar.init();
+  if (!window.claude""")
 open(dst,'w',encoding='utf-8').write(s)
 print('spliced', len(s))

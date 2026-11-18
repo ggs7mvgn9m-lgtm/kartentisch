@@ -1,5 +1,5 @@
 // ---------- HTML bereinigen ----------
-const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H1', 'H2', 'H3', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE', 'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'CODE']);
+const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H1', 'H2', 'H3', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'BLOCKQUOTE', 'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'CODE', 'STRIKE']);
 const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'LINK', 'META', 'NOSCRIPT', 'IMG', 'VIDEO', 'AUDIO', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT']);
 function sanitizeHtml(html) {
   const t = document.createElement('template'); t.innerHTML = String(html || '');
@@ -23,7 +23,11 @@ function sanitizeHtml(html) {
           ch.setAttribute('data-card', id);
           continue;
         }
+        const keep = tag === 'SPAN' ? Array.from(ch.classList).filter(c => /^(f-(serif|round|hand|mono|std)|s-(s|m|l|xl)|tc-(red|orange|green|blue|violet|gray|std)|hl-(yellow|green|blue|rose|none))$/.test(c)) : [];
         for (const a of Array.from(ch.attributes)) ch.removeAttribute(a.name);
+        if (keep.length) ch.className = keep.join(' ');
+        else if (tag === 'SPAN' && !ch.attributes.length) { ch.replaceWith(...Array.from(ch.childNodes)); continue; }
+        if (tag === 'STRIKE') { const s = document.createElement('s'); s.append(...ch.childNodes); ch.replaceWith(s); }
       } else if (ch.nodeType !== 3) ch.remove();
     }
   };

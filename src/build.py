@@ -16,6 +16,7 @@ s=s.replace('<title>Kartentisch</title>','<title>Kartentisch</title>\n'+head_ext
 s=s.replace('\n<script>', f'\n<script src="{SB}"></script>\n<script>')
 open(f'{OUT}/index.html','w',encoding='utf-8').write(s)
 shutil.copy(f'/home/claude/vendor/{SB}', f'{OUT}/{SB}')
+os.makedirs(f'{OUT}/fonts', exist_ok=True); shutil.copy('/home/claude/vendor/fonts/caveat-latin-500.woff2', f'{OUT}/fonts/caveat-latin-500.woff2'); shutil.copy('/home/claude/vendor/fonts/pkg/package/LICENSE', f'{OUT}/fonts/OFL-Caveat.txt')
 # App-Symbol: zwei Karten mit Handschrift-Schwung
 def icon(size, pad_ratio=0.0, path=None):
     S=size*4; im=Image.new('RGBA',(S,S),(47,111,237,255)); d=ImageDraw.Draw(im)
@@ -36,7 +37,7 @@ import hashlib
 ver=hashlib.sha1(s.encode()).hexdigest()[:10]
 open(f'{OUT}/sw.js','w').write(f"""// Offline-Start: App-Dateien zwischenspeichern, Daten kommen immer frisch von Supabase
 const CACHE = 'kartentisch-{ver}';
-const SHELL = ['./', './index.html', './{SB}', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const SHELL = ['./', './index.html', './{SB}', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './fonts/caveat-latin-500.woff2'];
 self.addEventListener('install', e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); }});
 self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
 self.addEventListener('fetch', e => {{

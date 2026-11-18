@@ -169,9 +169,25 @@ const BV = {
     return 'bitem ' + (kind === 'card' ? 'bcard ' + colorClass(ent.color) : 'bboard') + (it.h ? '' : ' auto') +
       (this.isSel(ref) ? ' sel' : '') + (ref === this.editingId ? ' editing' : '') + (this.connectFrom === ref ? ' connect-src' : '');
   },
+  mirrorCounts() {
+    const m = new Map();
+    for (const bb of S.boards.values()) for (const i of bb.items) if (i.cardId) m.set(i.cardId, (m.get(i.cardId) || 0) + 1);
+    return m;
+  },
+  mirrorBadge(el, ref, n) {
+    let bd = el.querySelector(':scope > .mirror');
+    if (n < 2) { if (bd) bd.remove(); return; }
+    if (!bd) {
+      bd = h('button', { class: 'mirror', type: 'button', onpointerdown: e => e.stopPropagation(), ondblclick: e => e.stopPropagation(),
+        onclick: e => { e.stopPropagation(); const cur = this.boardId; openMenu(bd, boardsWithCard(ref).map(x => ({ label: (x.id === cur ? '● ' : '') + (x.name || 'Whiteboard'), onClick: () => { if (x.id === cur) return; navigate({ type: 'board', id: x.id }); requestAnimationFrame(() => { BV.select({ type: 'card', id: ref }); BV.centerOn(ref); }); } }))); } });
+      el.append(bd);
+    }
+    bd.innerHTML = icon('board', 13) + '<span>' + n + '</span>';
+    bd.title = `Liegt auf ${n} Whiteboards – Änderungen erscheinen überall. Klicken zum Wechseln.`; bd.setAttribute('aria-label', bd.title);
+  },
   renderItems() {
     const b = this.board(); if (!b || !this.itemsLayer) return;
-    const seen = new Set(); const order = [];
+    const seen = new Set(); const order = []; const mirrors = this.mirrorCounts();
     for (const it of b.items) {
       const ref = it.cardId || it.boardId, kind = it.cardId ? 'card' : 'board';
       const ent = kind === 'card' ? S.cards.get(ref) : S.boards.get(ref);
@@ -187,6 +203,7 @@ const BV = {
       this.placeItem(el, it);
       const wasDragging = el.classList.contains('dragging');
       el.className = this.classFor(it, kind, ent); if (wasDragging) el.classList.add('dragging');
+      if (kind === 'card') this.mirrorBadge(el, ref, mirrors.get(ref) || 0);
       const ver = kind === 'card' ? String(ent.v) : ent.v + ':' + ent.items.length;
       if (ref === this.editingId) { el._ver = ver; continue; }
       if (el._ver !== ver) { el._ver = ver; el.firstChild.replaceChildren(kind === 'card' ? renderCardContent(ent) : boardTile(ent)); }
@@ -199,7 +216,13 @@ const BV = {
     if (!same) for (const el of order) this.itemsLayer.append(el);
     this.layoutSoon();
   },
-  placeItem(el, it) { el.style.transform = `translate(${it.x}px,${it.y}px)`; el.style.width = it.w + 'px'; el.style.height = it.h ? it.h + 'px' : ''; },
+  placeItem(el, it) {
+    el.style.transform = `translate(${it.x}px,${it.y}px)`;
+    if (it.cardId && it.cardId === this.editingId) {
+      // beim Bearbeiten nach unten aufklappen
+      el.style.width = Math.max(it.w, 480) + 'px'; el.style.height = ''; el.style.minHeight = Math.max(it.h || 0, 560) + 'px';
+    } else { el.style.width = it.w + 'px'; el.style.height = it.h ? it.h + 'px' : ''; el.style.minHeight = ''; }
+  },
   updateClip(el) { if (el.classList.contains('editing')) { el.classList.remove('clip'); return; } el.classList.toggle('clip', el.firstChild.scrollHeight > el.clientHeight + 2); },
   layoutSoon() {
     if (this._raf) return;
@@ -442,6 +465,7 @@ const BV = {
     const expand = h('button', { class: 'ie-expand icon-btn', type: 'button', title: 'Im Seitenpanel öffnen', 'aria-label': 'Im Seitenpanel öffnen', html: icon('open', 15), onclick: () => Editor.open(cardId) });
     el.firstChild.replaceChildren(h('div', { class: 'bc-grip', title: 'Hier ziehen zum Verschieben' }), host, expand);
     el.className = this.classFor(this.itemOf(cardId), 'card', card);
+    this.placeItem(el, this.itemOf(cardId)); this.layoutSoon();
     this.inlineEd = new BlockEditor(cardId, host, { inline: true, onChange: () => { const c = S.cards.get(cardId), e2 = this.els.get(cardId); if (c && e2) e2._ver = String(c.v); renderSidebarSoon(); } });
     this.select({ type: 'card', id: cardId });
     setTimeout(() => {
@@ -453,6 +477,7 @@ const BV = {
   flushInline() { if (this.inlineEd) this.inlineEd.flush(); },
   endInlineEdit(keep) {
     const id = this.editingId; if (!id) return;
+    TextBar.hide();
     if (this.inlineEd) { this.inlineEd.saveSoon.cancel(); this.inlineEd.flush(); }
     Slash.close();
     const el = this.els.get(id);
